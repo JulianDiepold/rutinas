@@ -1,22 +1,22 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..700&display=swap" rel="stylesheet">
+<base target="_blank"><link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..700&display=swap" rel="stylesheet">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="robots" content="noindex">
 <title>Mi rutina</title>
 <style>
-:root{--bg:#FBF1E8;--card:#fff;--tx:#2B1A0F;--tx2:#85604A;--acc:#C2410C;--onacc:#fff;--accbg:#FFE6D2;--ok:#14805A;--okbg:#DDF4EA;--nt:#6B4A00;--ntbg:#FFF1C2;--bad:#B3261E;--bar:#F3DCCB}
-@media (prefers-color-scheme:dark){:root{--bg:#1E140D;--card:#2B1D13;--tx:#FBEFE6;--tx2:#C9A58E;--acc:#FF9A5C;--onacc:#2B1204;--accbg:#4A2A14;--ok:#6FE0B0;--okbg:#173A2D;--nt:#FFD38A;--ntbg:#3A2E14;--bad:#FF9C95;--bar:#4A3626}}
+:root{--bg:#EFEDF6;--card:#fff;--tx:#1B1830;--tx2:#6A6585;--acc:#5B47E0;--onacc:#fff;--accbg:#ECE8FF;--ok:#14805A;--okbg:#DDF4EA;--nt:#1F5FAE;--ntbg:#E3EEFB;--bad:#B3261E;--bar:#DDD9EC}
+@media (prefers-color-scheme:dark){:root{--bg:#12101D;--card:#1C1930;--tx:#F2F0FA;--tx2:#A09BBB;--acc:#A99BFF;--onacc:#12101D;--accbg:#2A2550;--ok:#6FE0B0;--okbg:#173A2D;--nt:#9CC4F5;--ntbg:#1B2D47;--bad:#FF9C95;--bar:#2F2B47}}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.45 "Bricolage Grotesque",system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
 .ph{max-width:480px;margin:0 auto;padding:22px 14px 110px}
 h1{font-size:32px;line-height:1.05;letter-spacing:-.025em;font-weight:700;margin:0}
 .meta{font-size:13px;color:var(--tx2);margin:3px 0 0}
 button,input,textarea{font:inherit;color:inherit}
-.tabs{display:grid;grid-template-columns:repeat(auto-fit,minmax(128px,1fr));gap:8px;margin:18px 0 0}
-.chip{min-height:46px;padding:10px 12px;font-size:14px;font-weight:500;line-height:1.2;text-align:center;border-radius:14px;border:0;background:var(--card);color:var(--tx2);cursor:pointer}
+.tabs{display:flex;gap:8px;overflow-x:auto;margin:18px -14px 0;padding:0 14px 4px;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.chip{flex:none;padding:9px 15px;font-size:14px;font-weight:500;border-radius:999px;border:0;background:var(--card);color:var(--tx2);cursor:pointer}
 .chip.on{background:var(--acc);color:var(--onacc)}
 .card{background:var(--card);border-radius:22px;padding:16px;margin-top:12px;border:2px solid transparent}
 .card.fin{border-color:var(--ok)}
@@ -25,7 +25,7 @@ button,input,textarea{font:inherit;color:inherit}
 .card.fin .n{background:var(--okbg);color:var(--ok)}
 .t{margin:0;font-size:18px;font-weight:600;line-height:1.2;letter-spacing:-.01em}
 .note{font-size:13px;background:var(--ntbg);color:var(--nt);border-radius:12px;padding:9px 11px;margin-top:12px}
-.prev{font-size:13px;color:var(--tx2);margin:12px 0 0}
+.prev{font-size:13px;color:var(--tx2);background:var(--bg);border-radius:12px;padding:9px 11px;margin:12px 0 0}.prev b{color:var(--tx);font-weight:600}.prev em{display:block;margin-top:4px;font-style:normal}
 .row{display:grid;grid-template-columns:34px 1fr 1fr 1fr 46px;gap:6px;align-items:center;margin-top:6px}
 .row.hd{font-size:11px;color:var(--tx2);text-align:center;margin-top:14px}
 .row .l{font-size:13px;color:var(--tx2);text-align:center}
@@ -41,7 +41,7 @@ textarea{border:0;border-radius:12px;background:var(--bg);padding:9px 11px}
 .bar i{display:block;height:100%;background:var(--ok);width:0;transition:width .25s}
 .main{width:100%;margin-top:14px;height:48px;border-radius:14px;border:0;background:var(--acc);color:var(--onacc);font-weight:600;font-size:16px;cursor:pointer}
 a{color:var(--acc)}
-#rest{position:fixed;left:50%;transform:translateX(-50%);bottom:max(14px,env(safe-area-inset-bottom));z-index:5;background:var(--acc);color:var(--onacc);border-radius:999px;padding:12px 22px;font-weight:600;display:flex;gap:12px;align-items:baseline;white-space:nowrap;box-shadow:0 10px 28px rgba(43,26,15,.3)}
+#rest{position:fixed;left:50%;transform:translateX(-50%);bottom:max(14px,env(safe-area-inset-bottom));z-index:5;background:var(--acc);color:var(--onacc);border-radius:999px;padding:12px 22px;font-weight:600;display:flex;gap:12px;align-items:baseline;white-space:nowrap;box-shadow:0 10px 28px rgba(27,24,48,.3)}
 #rest:empty{display:none}
 #rest a{color:var(--onacc);opacity:.85;font-weight:500;font-size:14px}
 @media (prefers-reduced-motion:reduce){.bar i{transition:none}}
@@ -51,12 +51,8 @@ a{color:var(--acc)}
 <div class="ph" id="app"><p class="meta">Cargando tu rutina…</p></div>
 
 <script>
-// URL de la aplicación web de Apps Script (la que termina en /exec, sin /u/N/)
-var API = 'https://script.google.com/macros/s/AKfycbymJTRn0wWMrBHstnMuKD2dmnK-VhWw9LN15KeW1Z9XHEHRApj2JiDEMJzmcctowN06/exec';
-
-var qs = new URLSearchParams(location.search);
-var ID = qs.get('id') || '';
-var TOKEN = qs.get('t') || '';
+var ID = <?!= JSON.stringify(id).replace(/</g, '\\u003c') ?>;
+var TOKEN = <?!= JSON.stringify(token).replace(/</g, '\\u003c') ?>;
 var D = [], day = 0, S = {}, Q = {}, open = {}, T = null, left = 0;
 
 function $(i){ return document.getElementById(i); }
@@ -67,29 +63,10 @@ function fmt(n){ return Math.floor(n/60) + ':' + ('0' + (n % 60)).slice(-2); }
 function restSec(t){ var m = /(\d+)/.exec(t || ''); return m ? parseInt(m[1],10) * 60 : 120; }
 function msg(t, ok){ var m = $('msg'); if (!m) return; m.style.color = ok ? 'var(--ok)' : 'var(--bad)'; m.textContent = t || ''; }
 
-// ----- Comunicación con Apps Script -----
-// Lectura: GET. Escritura: POST con text/plain (evita el preflight de CORS, que Apps Script no soporta).
-function leer(){
-  return fetch(API + '?action=rutina&id=' + encodeURIComponent(ID) + '&t=' + encodeURIComponent(TOKEN))
-    .then(function(r){ return r.json(); })
-    .then(function(j){ if (!j.ok) throw new Error(j.error || 'Error'); return j.data; });
-}
-function escribir(body){
-  body.id = ID; body.t = TOKEN;
-  return fetch(API, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(body) })
-    .then(function(r){ return r.json(); })
-    .then(function(j){ if (!j.ok) throw new Error(j.error || 'Error'); return j; });
-}
-
-function falloCarga(e){
-  var t = (e && e.message === 'Link inválido')
-    ? 'Este link no es válido. Pedile a tu entrenador que te lo envíe de nuevo.'
-    : 'No pude abrir tu rutina. Revisá tu conexión e intentá de nuevo.';
-  $('app').innerHTML = '<p class="meta">' + t + '</p>';
-}
-
-if (!ID || !TOKEN) { falloCarga({ message: 'Link inválido' }); }
-else { leer().then(init).catch(falloCarga); }
+google.script.run
+  .withSuccessHandler(init)
+  .withFailureHandler(function(){ $('app').innerHTML = '<p class="meta">No pude abrir tu rutina. Revisá que el link esté completo.</p>'; })
+  .getRutina(ID, TOKEN);
 
 function init(r){
   D = r.dias || [];
@@ -122,9 +99,9 @@ function render(){
   D[day].ejercicios.forEach(function(x, ei){
     h += '<div class="card' + (exDone(ei) ? ' fin' : '') + '"><div class="eh"><span class="n">' + (ei+1) + '</span><div><p class="t">' + esc(x.nombre) + '</p>';
     h += '<p class="meta">' + x.series.length + ' series · ' + esc(x.reps) + ' reps · RIR ' + esc(x.rir) + ' · descanso ' + esc(String(x.descanso).toLowerCase()) + '</p></div></div>';
-    if (x.nota) h += '<div class="note">' + esc(x.nota) + '</div>';
-    var prev = x.series.filter(function(s){ return s.ant.reps !== ''; }).map(function(s){ return s.ant.reps + ' × ' + s.ant.peso + ' kg'; });
-    if (prev.length) h += '<p class="prev">Semana pasada: ' + esc(prev.join(' · ')) + '</p>';
+    if (x.nota) h += '<div class="note"><b>Nota del entrenador:</b> ' + esc(x.nota) + '</div>';
+    var prev = x.series.filter(function(s){ return s.ant.reps !== ''; }).map(function(s){ return s.ant.reps + (s.ant.peso !== '' ? ' × ' + s.ant.peso + ' kg' : ''); });
+    if (prev.length || x.notaAnt) h += '<div class="prev"><b>Semana pasada:</b> ' + esc(prev.join(' · ')) + (x.notaAnt ? '<em>Anotaste: ' + esc(x.notaAnt) + '</em>' : '') + '</div>';
     h += '<div class="row hd"><span>serie</span><span>reps</span><span>kg</span><span>RIR</span><span></span></div>';
     x.series.forEach(function(s, si){
       var k = key(day, ei, si), v = S[k] || {};
@@ -135,7 +112,7 @@ function render(){
         '<button class="ok' + (v.d ? ' done' : '') + '" onclick="tog(' + ei + ',' + si + ')" aria-label="Guardar serie">✓</button></div>';
     });
     h += '<div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">';
-    x.videos.forEach(function(u, vi){ h += '<a class="sm" href="' + esc(u) + '" target="_blank" rel="noopener">▶ Video ' + (vi+1) + '</a>'; });
+    x.videos.forEach(function(u, vi){ h += '<a class="sm" href="' + esc(u) + '" rel="noopener">▶ Video ' + (vi+1) + '</a>'; });
     h += '<button class="sm" onclick="dq(' + ei + ')">? Tengo una duda</button></div>';
     var qk = day + '_' + ei;
     if (open[qk]) h += '<textarea rows="2" style="width:100%;margin-top:8px;font-size:14px;padding:6px" placeholder="Escribí tu duda" oninput="Q[\'' + qk + '\']=this.value">' + esc(Q[qk] || '') + '</textarea>' +
@@ -154,23 +131,26 @@ function tog(ei, s){
   if (v.r === undefined || v.r === '' || v.k === undefined || v.k === '') { msg('Cargá reps y kilos antes de marcar la serie.', false); return; }
   v.d = true; S[k] = v;
   rest(restSec(D[d].ejercicios[ei].descanso));
-  escribir({ action: 'serie', d: d, e: ei, s: s, reps: v.r, peso: v.k, rir: v.i || '' })
-    .catch(function(){ v.d = false; render(); msg('No se pudo guardar esa serie. Probá de nuevo.', false); });
+  google.script.run
+    .withFailureHandler(function(){ v.d = false; render(); msg('No se pudo guardar esa serie. Probá de nuevo.', false); })
+    .guardarSerie(ID, TOKEN, d, ei, s, v.r, v.k, v.i || '');
   msg('', true); render();
 }
 
 function saveSleep(v){
-  escribir({ action: 'sueno', d: day, horas: v })
-    .catch(function(){ msg('No se pudo guardar el sueño.', false); });
+  google.script.run
+    .withFailureHandler(function(){ msg('No se pudo guardar el sueño.', false); })
+    .guardarSueno(ID, TOKEN, day, v);
 }
 
 function dq(ei){ var k = day + '_' + ei; open[k] = !open[k]; render(); }
 function sendq(ei){
   var qk = day + '_' + ei, t = (Q[qk] || '').trim();
   if (!t) return;
-  escribir({ action: 'duda', d: day, ejercicio: D[day].ejercicios[ei].nombre, texto: t })
-    .then(function(){ Q[qk] = ''; open[qk] = false; render(); msg('Duda enviada. Tu entrenador te va a responder.', true); })
-    .catch(function(){ msg('No se pudo enviar la duda.', false); });
+  google.script.run
+    .withSuccessHandler(function(){ Q[qk] = ''; open[qk] = false; render(); msg('Duda enviada. Tu entrenador te va a responder.', true); })
+    .withFailureHandler(function(){ msg('No se pudo enviar la duda.', false); })
+    .guardarDuda(ID, TOKEN, day, D[day].ejercicios[ei].nombre, t);
 }
 
 function exDone(ei){ var x = D[day].ejercicios[ei]; return x.series.length > 0 && x.series.every(function(s, si){ return (S[key(day,ei,si)] || {}).d; }); }
