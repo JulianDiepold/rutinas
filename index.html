@@ -32,6 +32,7 @@ button,input,textarea{font:inherit;color:inherit}
 .pc b{font-weight:600}
 .pc span{color:var(--tx2)}
 .pobs{margin:8px 0 0;font-size:12px;line-height:1.4;color:var(--tx2)}
+.st{margin:4px 0 0;font-size:12px;min-height:16px}
 .row{display:grid;grid-template-columns:34px 1fr 1fr 1fr 46px;gap:6px;align-items:center;margin-top:6px}
 .row.hd{font-size:11px;color:var(--tx2);text-align:center;margin-top:14px}
 .row .l{font-size:13px;color:var(--tx2);text-align:center}
@@ -63,7 +64,7 @@ var API = 'https://script.google.com/macros/s/AKfycbymJTRn0wWMrBHstnMuKD2dmnK-Vh
 var qs = new URLSearchParams(location.search);
 var ID = qs.get('id') || '';
 var TOKEN = qs.get('t') || '';
-var D = [], day = 0, S = {}, Q = {}, open = {}, T = null, left = 0;
+var D = [], day = 0, S = {}, O = {}, OT = {}, T = null, left = 0;
 
 function $(i){ return document.getElementById(i); }
 function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
@@ -116,7 +117,7 @@ else {
 
 function init(r){
   D = r.dias || [];
-  D.forEach(function(d, di){ d.ejercicios.forEach(function(x, ei){ x.series.forEach(function(s, si){
+  D.forEach(function(d, di){ d.ejercicios.forEach(function(x, ei){ O[di + '_' + ei] = x.obsHoy || ''; x.series.forEach(function(s, si){
     if (s.hoy.reps !== '' && s.hoy.peso !== '') S[key(di,ei,si)] = { r: s.hoy.reps, k: s.hoy.peso, i: s.hoy.rir, d: true };
   }); }); });
   var m = /^S(\d+)\s*-\s*(\d+\/\d+)/.exec(r.semana || '');
@@ -161,12 +162,15 @@ function render(){
         '<input inputmode="decimal" placeholder="RIR" value="' + esc(v.i == null ? '' : v.i) + '" oninput="setv(\'' + k + '\',\'i\',this.value)" aria-label="RIR">' +
         '<button class="ok' + (v.d ? ' done' : '') + '" onclick="tog(' + ei + ',' + si + ')" aria-label="Guardar serie">✓</button></div>';
     });
-    h += '<div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">';
-    x.videos.forEach(function(u, vi){ h += '<a class="sm" href="' + esc(u) + '" target="_blank" rel="noopener">▶ Video ' + (vi+1) + '</a>'; });
-    h += '<button class="sm" onclick="dq(' + ei + ')">? Tengo una duda</button></div>';
-    var qk = day + '_' + ei;
-    if (open[qk]) h += '<textarea rows="2" style="width:100%;margin-top:8px;font-size:14px;padding:6px" placeholder="Escribí tu duda" oninput="Q[\'' + qk + '\']=this.value">' + esc(Q[qk] || '') + '</textarea>' +
-      '<button class="sm" style="margin-top:6px" onclick="sendq(' + ei + ')">Enviar duda</button>';
+    if (x.videos.length) {
+      h += '<div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">';
+      x.videos.forEach(function(u, vi){ h += '<a class="sm" href="' + esc(u) + '" target="_blank" rel="noopener">▶ Video ' + (vi+1) + '</a>'; });
+      h += '</div>';
+    }
+    var ok = day + '_' + ei;
+    h += '<label class="pl" for="obs' + ei + '" style="display:block;margin:12px 0 6px">Tus observaciones</label>' +
+      '<textarea id="obs' + ei + '" rows="2" style="width:100%;font-size:14px;padding:8px" placeholder="Anotá cómo te fue, qué sentiste o tus dudas" oninput="setobs(' + ei + ',this.value)" onchange="saveObs(day,' + ei + ')">' + esc(O[ok] || '') + '</textarea>' +
+      '<p class="st" id="st_' + ok + '"></p>';
     h += '</div>';
   });
   $('list').innerHTML = h;
@@ -192,13 +196,22 @@ function saveSleep(v){
     .catch(function(){ msg('No se pudo guardar el sueño.', false); });
 }
 
-function dq(ei){ var k = day + '_' + ei; open[k] = !open[k]; render(); }
-function sendq(ei){
-  var qk = day + '_' + ei, t = (Q[qk] || '').trim();
-  if (!t) return;
-  escribir({ action: 'duda', d: day, ejercicio: D[day].ejercicios[ei].nombre, texto: t })
-    .then(function(){ Q[qk] = ''; open[qk] = false; render(); msg('Duda enviada. Tu entrenador te va a responder.', true); })
-    .catch(function(){ msg('No se pudo enviar la duda.', false); });
+// Observaciones por ejercicio: se guardan solas al dejar de escribir (o al salir del cuadro).
+function setSt(k, t, ok){ var p = $('st_' + k); if (!p) return; p.style.color = ok ? 'var(--ok)' : 'var(--bad)'; p.textContent = t || ''; }
+function setobs(ei, v){
+  touched = true;
+  var d = day, k = d + '_' + ei;
+  O[k] = v; setSt(k, '', true);
+  clearTimeout(OT[k]);
+  OT[k] = setTimeout(function(){ saveObs(d, ei); }, 1200);
+}
+function saveObs(d, ei){
+  var k = d + '_' + ei;
+  clearTimeout(OT[k]);
+  setSt(k, 'Guardando…', true);
+  escribir({ action: 'obs', d: d, e: ei, texto: O[k] || '' })
+    .then(function(){ setSt(k, 'Guardado ✓', true); })
+    .catch(function(){ setSt(k, 'No se pudo guardar. Probá de nuevo.', false); });
 }
 
 function exDone(ei){ var x = D[day].ejercicios[ei]; return x.series.length > 0 && x.series.every(function(s, si){ return (S[key(day,ei,si)] || {}).d; }); }
