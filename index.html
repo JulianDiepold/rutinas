@@ -31,6 +31,7 @@ button,input,textarea{font:inherit;color:inherit}
 .pc{font-size:12px;line-height:1.3;background:var(--bg);color:var(--tx);border-radius:10px;padding:5px 9px}
 .pc b{font-weight:600}
 .pc span{color:var(--tx2)}
+.pobs{margin:8px 0 0;font-size:12px;line-height:1.4;color:var(--tx2)}
 .row{display:grid;grid-template-columns:34px 1fr 1fr 1fr 46px;gap:6px;align-items:center;margin-top:6px}
 .row.hd{font-size:11px;color:var(--tx2);text-align:center;margin-top:14px}
 .row .l{font-size:13px;color:var(--tx2);text-align:center}
@@ -147,9 +148,10 @@ function render(){
     if (x.nota) h += '<div class="note"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:2px" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>' + esc(x.nota) + '</span></div>';
     var prev = x.series.map(function(s, si){
       if (s.ant.reps === '') return '';
-      return '<span class="pc"><b>' + (si+1) + 'ª</b> ' + esc(s.ant.reps) + (s.ant.peso !== '' ? ' × ' + esc(s.ant.peso) + ' kg' : '') + (s.ant.rir !== '' ? ' <span>· RIR ' + esc(s.ant.rir) + '</span>' : '') + '</span>';
+      var dd = String(s.ant.des || '').trim(); if (/^\d+$/.test(dd)) dd += ' min';
+      return '<span class="pc"><b>' + (si+1) + 'ª</b> ' + esc(s.ant.reps) + (s.ant.peso !== '' ? ' × ' + esc(s.ant.peso) + ' kg' : '') + (s.ant.rir !== '' ? ' <span>· RIR ' + esc(s.ant.rir) + '</span>' : '') + (dd ? ' <span>· ' + esc(dd) + '</span>' : '') + '</span>';
     }).join('');
-    if (prev) h += '<div class="prev"><p class="pl">Semana pasada</p><div class="chips">' + prev + '</div></div>';
+    if (prev || x.antObs) h += '<div class="prev"><p class="pl">Semana pasada</p>' + (prev ? '<div class="chips">' + prev + '</div>' : '') + (x.antObs ? '<p class="pobs">Tu comentario: ' + esc(x.antObs) + '</p>' : '') + '</div>';
     h += '<div class="row hd"><span>serie</span><span>reps</span><span>kg</span><span>RIR</span><span></span></div>';
     x.series.forEach(function(s, si){
       var k = key(day, ei, si), v = S[k] || {};
