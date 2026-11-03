@@ -105,6 +105,9 @@ function conReintentos(fn, max){
   return probar();
 }
 
+// Guarda la página en el celular para que abra aunque la red esté cortada o cambiando (ver sw.js).
+if ('serviceWorker' in navigator) window.addEventListener('load', function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); });
+
 function leer(sem){
   var t0 = performance.now();
   var url = API + '?action=rutina&id=' + encodeURIComponent(ID) + '&t=' + encodeURIComponent(TOKEN) + (sem ? '&semana=' + encodeURIComponent(sem) : '');
