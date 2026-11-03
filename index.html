@@ -83,28 +83,56 @@ function msg(t, ok){ var m = $('msg'); if (!m) return; m.style.color = ok ? 'var
 
 // ----- Comunicación con Apps Script -----
 // Lectura: GET. Escritura: POST con text/plain (evita el preflight de CORS, que Apps Script no soporta).
-function leer(sem, intento){
-  var t0 = performance.now(), ctl = new AbortController(), to = setTimeout(function(){ ctl.abort(); }, 30000);
-  return fetch(API + '?action=rutina&id=' + encodeURIComponent(ID) + '&t=' + encodeURIComponent(TOKEN) + (sem ? '&semana=' + encodeURIComponent(sem) : ''), { signal: ctl.signal })
-    .then(function(r){ return r.text(); })
-    .then(function(t){
-      var j = JSON.parse(t);
-      if (!j.ok) throw new Error(j.error || 'Error');
-      DBG = { ms: Math.round(performance.now() - t0), kb: Math.round(t.length / 102.4) / 10, srv: j.data && j.data.t };
-      mostrarDbg();
-      return j.data;
-    })
-    .finally(function(){ clearTimeout(to); })
-    .catch(function(e){   // en redes móviles inestables, un reintento automático resuelve la mayoría de los cortes
-      if ((intento || 0) < 1 && !(e && e.message === 'Link inválido')) return new Promise(function(res){ setTimeout(res, 1200); }).then(function(){ return leer(sem, 1); });
-      throw e;
-    });
+function esperar(ms){ return new Promise(function(res){ setTimeout(res, ms); }); }
+// Si el navegador sabe que no hay red (p. ej. mientras el celu cambia de antena o de WiFi a datos), espera a que vuelva (máx. 20 s).
+function esperarRed(){
+  if (navigator.onLine !== false) return Promise.resolve();
+  return new Promise(function(res){
+    var f = function(){ window.removeEventListener('online', f); res(); };
+    window.addEventListener('online', f); setTimeout(f, 20000);
+  });
 }
+// Repite el pedido hasta "max" veces con pausas crecientes (1 s, 2 s, 3 s…). Un cambio de red dura unos segundos: así se lo "salta".
+function conReintentos(fn, max){
+  var i = 0;
+  function probar(){
+    return esperarRed().then(fn).catch(function(e){
+      if (e && e.message === 'Link inválido') throw e;
+      if (++i >= max) throw e;
+      return esperar(1000 * i).then(probar);
+    });
+  }
+  return probar();
+}
+
+function leer(sem){
+  var t0 = performance.now();
+  var url = API + '?action=rutina&id=' + encodeURIComponent(ID) + '&t=' + encodeURIComponent(TOKEN) + (sem ? '&semana=' + encodeURIComponent(sem) : '');
+  return conReintentos(function(){
+    var ctl = new AbortController(), to = setTimeout(function(){ ctl.abort(); }, 20000);
+    return fetch(url, { signal: ctl.signal })
+      .then(function(r){ return r.text(); })
+      .then(function(t){
+        var j = JSON.parse(t);
+        if (!j.ok) throw new Error(j.error || 'Error');
+        DBG = { ms: Math.round(performance.now() - t0), kb: Math.round(t.length / 102.4) / 10, srv: j.data && j.data.t };
+        mostrarDbg();
+        return j.data;
+      })
+      .finally(function(){ clearTimeout(to); });
+  }, 5);
+}
+// Las escrituras son "poner este valor en esta celda": repetirlas no duplica nada, así que es seguro reintentarlas.
 function escribir(body){
   body.id = ID; body.t = TOKEN;
-  return fetch(API, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(body) })
-    .then(function(r){ return r.json(); })
-    .then(function(j){ if (!j.ok) throw new Error(j.error || 'Error'); return j; });
+  var datos = JSON.stringify(body);
+  return conReintentos(function(){
+    var ctl = new AbortController(), to = setTimeout(function(){ ctl.abort(); }, 20000);
+    return fetch(API, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: datos, signal: ctl.signal })
+      .then(function(r){ return r.json(); })
+      .then(function(j){ if (!j.ok) throw new Error(j.error || 'Error'); return j; })
+      .finally(function(){ clearTimeout(to); });
+  }, 5);
 }
 
 // La fuente se pide recién cuando la rutina ya se ve, para que no compita con los datos por la conexión.
