@@ -1,242 +1,216 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..700&display=swap" rel="stylesheet">
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="robots" content="noindex">
-<title>Mi rutina</title>
-<style>
-:root{--bg:#FBF1E8;--card:#fff;--tx:#2B1A0F;--tx2:#85604A;--acc:#C2410C;--onacc:#fff;--accbg:#FFE6D2;--ok:#14805A;--okbg:#DDF4EA;--nt:#1C5CAB;--ntbg:#E2EEFA;--bad:#B3261E;--bar:#F3DCCB}
-@media (prefers-color-scheme:dark){:root{--bg:#1E140D;--card:#2B1D13;--tx:#FBEFE6;--tx2:#C9A58E;--acc:#FF9A5C;--onacc:#2B1204;--accbg:#4A2A14;--ok:#6FE0B0;--okbg:#173A2D;--nt:#9EC5F4;--ntbg:#0D2A4D;--bad:#FF9C95;--bar:#4A3626}}
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.45 "Bricolage Grotesque",system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
-.ph{max-width:480px;margin:0 auto;padding:22px 14px 110px}
-h1{font-size:32px;line-height:1.05;letter-spacing:-.025em;font-weight:700;margin:0}
-.meta{font-size:13px;color:var(--tx2);margin:3px 0 0}
-button,input,textarea{font:inherit;color:inherit}
-.tabs{display:grid;grid-template-columns:repeat(auto-fit,minmax(128px,1fr));gap:8px;margin:18px 0 0}
-.chip{min-height:46px;padding:10px 12px;font-size:14px;font-weight:500;line-height:1.2;text-align:center;border-radius:14px;border:0;background:var(--card);color:var(--tx2);cursor:pointer}
-.chip.on{background:var(--acc);color:var(--onacc)}
-.card{background:var(--card);border-radius:22px;padding:16px;margin-top:12px;border:2px solid transparent}
-.card.fin{border-color:var(--ok)}
-.eh{display:flex;gap:12px;align-items:flex-start}
-.n{flex:none;width:30px;height:30px;border-radius:10px;background:var(--accbg);color:var(--acc);font-weight:700;font-size:14px;display:grid;place-items:center}
-.card.fin .n{background:var(--okbg);color:var(--ok)}
-.t{margin:0;font-size:18px;font-weight:600;line-height:1.2;letter-spacing:-.01em}
-.note{display:flex;gap:8px;align-items:flex-start;font-size:13px;background:var(--ntbg);color:var(--nt);border-radius:12px;padding:9px 11px;margin-top:12px}
-.prev{margin-top:12px}
-.pl{margin:0 0 6px;font-size:12px;font-weight:500;color:var(--tx2)}
-.chips{display:flex;flex-wrap:wrap;gap:6px}
-.pc{font-size:12px;line-height:1.3;background:var(--bg);color:var(--tx);border-radius:10px;padding:5px 9px}
-.pc b{font-weight:600}
-.pc span{color:var(--tx2)}
-.pobs{margin:8px 0 0;font-size:12px;line-height:1.4;color:var(--tx2)}
-.st{margin:4px 0 0;font-size:12px;min-height:16px}
-.row{display:grid;grid-template-columns:34px 1fr 1fr 1fr 46px;gap:6px;align-items:center;margin-top:6px}
-.row.hd{font-size:11px;color:var(--tx2);text-align:center;margin-top:14px}
-.row .l{font-size:13px;color:var(--tx2);text-align:center}
-.row input{width:100%;min-width:0;height:44px;font-size:16px;font-weight:500;text-align:center;border:0;border-radius:12px;background:var(--bg)}
-.row input::placeholder{color:var(--tx2);opacity:.5;font-weight:400}
-input:focus,textarea:focus,button:focus-visible,a:focus-visible{outline:2px solid var(--acc);outline-offset:1px}
-.ok{height:44px;width:46px;border-radius:12px;border:0;background:var(--bg);color:var(--tx2);font-size:18px;cursor:pointer}
-.ok.done{background:var(--ok);color:var(--card)}
-.sm{font-size:13px;height:34px;padding:0 13px;border-radius:999px;border:0;background:var(--accbg);color:var(--acc);font-weight:500;cursor:pointer;display:inline-flex;align-items:center;text-decoration:none}
-#sleep{border:0;border-radius:12px;background:var(--bg);font-size:16px}
-textarea{border:0;border-radius:12px;background:var(--bg);padding:9px 11px}
-.bar{height:8px;background:var(--bar);border-radius:4px;overflow:hidden}
-.bar i{display:block;height:100%;background:var(--ok);width:0;transition:width .25s}
-.main{width:100%;margin-top:14px;height:48px;border-radius:14px;border:0;background:var(--acc);color:var(--onacc);font-weight:600;font-size:16px;cursor:pointer}
-a{color:var(--acc)}
-#rest{position:fixed;left:50%;transform:translateX(-50%);bottom:max(14px,env(safe-area-inset-bottom));z-index:5;background:var(--acc);color:var(--onacc);border-radius:999px;padding:12px 22px;font-weight:600;display:flex;gap:12px;align-items:baseline;white-space:nowrap;box-shadow:0 10px 28px rgba(43,26,15,.3)}
-#rest:empty{display:none}
-#rest a{color:var(--onacc);opacity:.85;font-weight:500;font-size:14px}
-@media (prefers-reduced-motion:reduce){.bar i{transition:none}}
-</style>
-</head>
-<body>
-<div class="ph" id="app"><p class="meta">Cargando tu rutina… la primera vez puede tardar unos segundos.</p></div>
+// ===== CONFIGURACIÓN =====
+// Planilla "admin" (la tuya) con la pestaña:
+//  - "Alumnos": A = ID_CLIENTE, B = TOKEN, C = ID de la planilla de ese alumno
+// (La pestaña "Dudas" ya no se usa: las observaciones van a la planilla de cada alumno.)
+const ADMIN_ID = '1pU4D4VPU0qYhYsC5cgBAP1BGQM2e2Y2LYm_HymWhG4c';
+const ID_PLANILLA_PRUEBA = '1WKha84cLk848E4mvvsUzMmBuQVepZhg6eoU-7Tk3kx0'; // solo para diagnostico()
 
-<script>
-// URL de la aplicación web de Apps Script (la que termina en /exec, sin /u/N/)
-var API = 'https://script.google.com/macros/s/AKfycbymJTRn0wWMrBHstnMuKD2dmnK-VhWw9LN15KeW1Z9XHEHRApj2JiDEMJzmcctowN06/exec';
-
-var qs = new URLSearchParams(location.search);
-var ID = qs.get('id') || '';
-var TOKEN = qs.get('t') || '';
-var D = [], day = 0, S = {}, O = {}, OT = {}, T = null, left = 0;
-
-function $(i){ return document.getElementById(i); }
-function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
-function key(d,e,s){ return d + '_' + e + '_' + s; }
-function cap(s){ s = String(s || '').toLowerCase(); return s.charAt(0).toUpperCase() + s.slice(1); }
-function fmt(n){ return Math.floor(n/60) + ':' + ('0' + (n % 60)).slice(-2); }
-function restSec(t){ var m = /(\d+)/.exec(t || ''); return m ? parseInt(m[1],10) * 60 : 120; }
-function msg(t, ok){ var m = $('msg'); if (!m) return; m.style.color = ok ? 'var(--ok)' : 'var(--bad)'; m.textContent = t || ''; }
-
-// ----- Comunicación con Apps Script -----
-// Lectura: GET. Escritura: POST con text/plain (evita el preflight de CORS, que Apps Script no soporta).
-function leer(){
-  var ctl = new AbortController(), to = setTimeout(function(){ ctl.abort(); }, 40000);
-  return fetch(API + '?action=rutina&id=' + encodeURIComponent(ID) + '&t=' + encodeURIComponent(TOKEN), { signal: ctl.signal })
-    .then(function(r){ return r.json(); })
-    .then(function(j){ if (!j.ok) throw new Error(j.error || 'Error'); return j.data; })
-    .finally(function(){ clearTimeout(to); });
-}
-function escribir(body){
-  body.id = ID; body.t = TOKEN;
-  return fetch(API, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(body) })
-    .then(function(r){ return r.json(); })
-    .then(function(j){ if (!j.ok) throw new Error(j.error || 'Error'); return j; });
+// ===== ENTRADA WEB (API JSON) =====
+// La página vive en GitHub Pages y habla con este script por fetch.
+//   GET  ?action=rutina&id=...&t=...[&semana=NOMBRE_PESTAÑA]
+//        -> { ok:true, data:{ semana, actual, semanas:[últimas 4, la más nueva primero], dias } }
+//   POST { action:'serie'|'sueno'|'obs', id, t, ... }  (Content-Type: text/plain)
+function doGet(e) {
+  const p = (e && e.parameter) || {};
+  try {
+    if (p.action === 'rutina') return json_({ ok: true, data: getRutina(p.id, p.t, p.semana) });
+    return json_({ ok: false, error: 'Acción inválida' });
+  } catch (err) {
+    console.error(err);
+    return json_({ ok: false, error: msgErr_(err) });
+  }
 }
 
-function falloCarga(e){
-  var t = (e && e.message === 'Link inválido')
-    ? 'Este link no es válido. Pedile a tu entrenador que te lo envíe de nuevo.'
-    : 'No pude abrir tu rutina. Revisá tu conexión e intentá de nuevo.';
-  $('app').innerHTML = '<p class="meta">' + t + '</p>';
-}
-
-// Muestra al instante la última rutina guardada en este dispositivo y la actualiza en segundo plano.
-var CK = 'rutina_' + ID, touched = false, shown = false;
-function guardarCache(r){ try { localStorage.setItem(CK, JSON.stringify(r)); } catch(e){} }
-function leerCache(){ try { return JSON.parse(localStorage.getItem(CK)); } catch(e){ return null; } }
-
-if (!ID || !TOKEN) { falloCarga({ message: 'Link inválido' }); }
-else {
-  var cached = leerCache();
-  if (cached && cached.dias && cached.dias.length) { init(cached); shown = true; }
-  leer().then(function(r){
-    guardarCache(r);
-    if (!shown || !touched) { init(r); shown = true; }
-  }).catch(function(e){
-    if (e && e.message === 'Link inválido') { try { localStorage.removeItem(CK); } catch(x){} falloCarga(e); }
-    else if (!shown) falloCarga(e);
-  });
-}
-
-function init(r){
-  D = r.dias || [];
-  D.forEach(function(d, di){ d.ejercicios.forEach(function(x, ei){ O[di + '_' + ei] = x.obsHoy || ''; x.series.forEach(function(s, si){
-    if (s.hoy.reps !== '' && s.hoy.peso !== '') S[key(di,ei,si)] = { r: s.hoy.reps, k: s.hoy.peso, i: s.hoy.rir, d: true };
-  }); }); });
-  var m = /^S(\d+)\s*-\s*(\d+\/\d+)/.exec(r.semana || '');
-  var sub = m ? 'Semana ' + m[1] + ' · desde el ' + m[2] : esc(r.semana);
-  $('app').innerHTML =
-    '<h1>Tu rutina</h1><p class="meta">' + sub + '</p>' +
-    '<div class="tabs" id="tabs"></div>' +
-    '<div class="card" style="display:flex;align-items:center;gap:8px"><span style="font-size:13px;flex:1">Horas de sueño previas</span>' +
-    '<input id="sleep" type="text" inputmode="decimal" placeholder="7" style="width:64px;height:36px;text-align:center" onchange="saveSleep(this.value)"></div>' +
-    '<div id="rest"></div>' +
-    '<div id="list"></div>' +
-    '<div class="card"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px"><span id="plab" style="color:var(--tx2)"></span><span id="ppct"></span></div>' +
-    '<div class="bar"><i id="pb"></i></div><button class="main" onclick="finish()">Terminar entrenamiento</button>' +
-    '<p id="msg" style="font-size:13px;margin:8px 0 0;min-height:18px"></p></div>';
-  render();
-}
-
-function render(){
-  var tabs = '';
-  D.forEach(function(x, i){ tabs += '<button class="chip' + (i == day ? ' on' : '') + '" onclick="go(' + i + ')">' + esc(cap(x.titulo)) + '</button>'; });
-  $('tabs').innerHTML = tabs;
-  var sl = String(D[day].sueno.hoy || '').replace(/[^\d.,]/g, '');
-  if (document.activeElement !== $('sleep')) $('sleep').value = sl;
-
-  var h = '';
-  D[day].ejercicios.forEach(function(x, ei){
-    h += '<div class="card' + (exDone(ei) ? ' fin' : '') + '"><div class="eh"><span class="n">' + (ei+1) + '</span><div><p class="t">' + esc(x.nombre) + '</p>';
-    h += '<p class="meta">' + x.series.length + ' series · ' + esc(x.reps) + ' reps · RIR ' + esc(x.rir) + ' · descanso ' + esc(String(x.descanso).toLowerCase()) + '</p></div></div>';
-    if (x.nota) h += '<div class="note"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:2px" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>' + esc(x.nota) + '</span></div>';
-    var prev = x.series.map(function(s, si){
-      if (s.ant.reps === '') return '';
-      var dd = String(s.ant.des || '').trim(); if (/^\d+$/.test(dd)) dd += ' min';
-      return '<span class="pc"><b>' + (si+1) + 'ª</b> ' + esc(s.ant.reps) + (s.ant.peso !== '' ? ' × ' + esc(s.ant.peso) + ' kg' : '') + (s.ant.rir !== '' ? ' <span>· RIR ' + esc(s.ant.rir) + '</span>' : '') + (dd ? ' <span>· ' + esc(dd) + '</span>' : '') + '</span>';
-    }).join('');
-    if (prev || x.antObs) h += '<div class="prev"><p class="pl">Semana pasada</p>' + (prev ? '<div class="chips">' + prev + '</div>' : '') + (x.antObs ? '<p class="pobs">Tu comentario: ' + esc(x.antObs) + '</p>' : '') + '</div>';
-    h += '<div class="row hd"><span>serie</span><span>reps</span><span>kg</span><span>RIR</span><span></span></div>';
-    x.series.forEach(function(s, si){
-      var k = key(day, ei, si), v = S[k] || {};
-      h += '<div class="row"><span class="l">' + (si+1) + '</span>' +
-        '<input inputmode="decimal" placeholder="' + esc(s.ant.reps !== '' ? s.ant.reps : 'reps') + '" value="' + esc(v.r == null ? '' : v.r) + '" oninput="setv(\'' + k + '\',\'r\',this.value)" aria-label="Repeticiones">' +
-        '<input inputmode="decimal" placeholder="' + esc(s.ant.peso !== '' ? s.ant.peso : 'kg') + '" value="' + esc(v.k == null ? '' : v.k) + '" oninput="setv(\'' + k + '\',\'k\',this.value)" aria-label="Kilos">' +
-        '<input inputmode="decimal" placeholder="RIR" value="' + esc(v.i == null ? '' : v.i) + '" oninput="setv(\'' + k + '\',\'i\',this.value)" aria-label="RIR">' +
-        '<button class="ok' + (v.d ? ' done' : '') + '" onclick="tog(' + ei + ',' + si + ')" aria-label="Guardar serie">✓</button></div>';
-    });
-    if (x.videos.length) {
-      h += '<div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">';
-      x.videos.forEach(function(u, vi){ h += '<a class="sm" href="' + esc(u) + '" target="_blank" rel="noopener">▶ Video ' + (vi+1) + '</a>'; });
-      h += '</div>';
+function doPost(e) {
+  try {
+    const b = JSON.parse(e.postData.contents);
+    switch (b.action) {
+      case 'serie': guardarSerie(b.id, b.t, b.d, b.e, b.s, b.reps, b.peso, b.rir); break;
+      case 'sueno': guardarSueno(b.id, b.t, b.d, b.horas); break;
+      case 'obs':   guardarObs(b.id, b.t, b.d, b.e, b.texto); break;
+      default: return json_({ ok: false, error: 'Acción inválida' });
     }
-    var ok = day + '_' + ei;
-    h += '<label class="pl" for="obs' + ei + '" style="display:block;margin:12px 0 6px">Tus observaciones</label>' +
-      '<textarea id="obs' + ei + '" rows="2" style="width:100%;font-size:14px;padding:8px" placeholder="Anotá cómo te fue, qué sentiste o tus dudas" oninput="setobs(' + ei + ',this.value)" onchange="saveObs(day,' + ei + ')">' + esc(O[ok] || '') + '</textarea>' +
-      '<p class="st" id="st_' + ok + '"></p>';
-    h += '</div>';
+    return json_({ ok: true });
+  } catch (err) {
+    console.error(err);
+    return json_({ ok: false, error: msgErr_(err) });
+  }
+}
+
+function json_(o) {
+  return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON);
+}
+
+// Solo se muestra el motivo cuando es el link; el resto queda en el registro de ejecución.
+function msgErr_(err) {
+  return String(err && err.message) === 'Link inválido' ? 'Link inválido' : 'Error del servidor';
+}
+
+// ===== FUNCIONES DE DATOS =====
+// Devuelve la semana pedida (por defecto la actual). Solo se pueden pedir las últimas 4 pestañas.
+// Las escrituras (guardarSerie, guardarSueno, guardarObs) siempre van a la semana actual.
+function getRutina(id, token, semana) {
+  const hojas = hojasSemanas_(planilla_(id, token));
+  const ultimas = hojas.slice(-4);
+  const actual = ultimas[ultimas.length - 1];
+  let sh = actual;
+  if (semana) {
+    sh = ultimas.find(h => h.getName() === String(semana));
+    if (!sh) throw new Error('Semana inválida');
+  }
+  return {
+    semana: sh.getName(),
+    actual: sh.getName() === actual.getName(),
+    semanas: ultimas.map(h => h.getName()).reverse(),
+    dias: parsear_(sh)
+  };
+}
+
+function guardarSerie(id, token, d, e, s, reps, peso, rir) {
+  const sh = semanaActual_(planilla_(id, token));
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    const dia = parsear_(sh)[d];
+    const fila = dia.ejercicios[e].series[s].fila;
+    sh.getRange(fila, dia.al + 1, 1, 3).setValues([[n_(reps), n_(peso), n_(rir)]]);
+  } finally { lock.releaseLock(); }
+  return true;
+}
+
+function guardarSueno(id, token, d, horas) {
+  const sh = semanaActual_(planilla_(id, token));
+  const dia = parsear_(sh)[d];
+  sh.getRange(dia.r0 + 3, dia.al + 1).setValue(n_(horas) + 'h'); // 1ª fila de las 4 combinadas
+  return true;
+}
+
+// Guarda la observación de la alumna en la columna "Observaciones" de "Completar Alumno",
+// en la primera fila de las series de ese ejercicio.
+function guardarObs(id, token, d, e, texto) {
+  const sh = semanaActual_(planilla_(id, token));
+  // Limita el largo y evita que un texto que empieza con = + - @ se interprete como fórmula
+  const limpio = String(texto || '').slice(0, 1000).replace(/^[=+\-@]/, "'$&");
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    const dia = parsear_(sh)[d];
+    const fila = dia.ejercicios[e].series[0].fila;
+    sh.getRange(fila, dia.al + 5).setValue(limpio); // al = REPs; +4 = Observaciones (base 0) → +5 en base 1
+  } finally { lock.releaseLock(); }
+  return true;
+}
+
+// ===== AUXILIARES =====
+// La lista de alumnos se guarda 10 min en caché para no abrir la planilla admin en cada pedido.
+// Si agregás o cambiás un alumno/token y necesitás que rija ya, ejecutá limpiarCache() a mano.
+function alumnos_() {
+  const cache = CacheService.getScriptCache();
+  const hit = cache.get('alumnos');
+  if (hit) return JSON.parse(hit);
+  const filas = SpreadsheetApp.openById(ADMIN_ID).getSheetByName('Alumnos').getDataRange().getValues()
+    .map(r => [String(r[0]), String(r[1]), String(r[2])]);
+  cache.put('alumnos', JSON.stringify(filas), 600);
+  return filas;
+}
+
+function limpiarCache() { CacheService.getScriptCache().remove('alumnos'); }
+
+function planilla_(id, token) {
+  const f = alumnos_().find(r => r[0] === String(id) && r[1] === String(token));
+  if (!f) throw new Error('Link inválido');
+  return SpreadsheetApp.openById(f[2]);
+}
+
+// Pestañas semanales (S1 - ..., S2 - ...) ordenadas de la más vieja a la más nueva. Nunca incluye "Datos".
+function hojasSemanas_(ss) {
+  const hojas = ss.getSheets().filter(h => /^S\d+\s*-/.test(h.getName()));
+  hojas.sort((a, b) => parseInt(a.getName().slice(1), 10) - parseInt(b.getName().slice(1), 10));
+  return hojas;
+}
+
+function semanaActual_(ss) {
+  const hojas = hojasSemanas_(ss);
+  return hojas[hojas.length - 1];
+}
+
+function n_(x) { const n = parseFloat(String(x).replace(',', '.')); return isNaN(n) ? '' : n; }
+
+// Lee la pestaña semanal. Se guía por los textos de los encabezados (no por letras de columna),
+// y como en las celdas combinadas solo la de arriba a la izquierda trae valor, todo se lee desde ahí.
+function parsear_(sh) {
+  const rango = sh.getDataRange();
+  const v = rango.getDisplayValues();
+  const txt = x => String(x).trim();
+  const buscar = (fila, re) => fila.findIndex(x => re.test(txt(x)));
+
+  const inicios = [];
+  v.forEach((fila, i) => { if (fila.some(x => /^D[ÍI]A\s*\d+/i.test(txt(x)))) inicios.push(i); });
+
+  // Los links de los videos se leen solo de las columnas "REFERENCIA" (rango angosto),
+  // en vez de pedir el texto enriquecido y las fórmulas de toda la planilla.
+  const vc = [];
+  inicios.forEach(r0 => v[r0].forEach((x, k) => { if (/^REFERENCIA$/i.test(txt(x))) vc.push(k); }));
+  let rt = [], fm = [], c0 = 0;
+  if (vc.length) {
+    c0 = Math.min.apply(null, vc);
+    const rv = sh.getRange(1, c0 + 1, v.length, Math.max.apply(null, vc) - c0 + 1);
+    rt = rv.getRichTextValues(); fm = rv.getFormulas();
+  }
+  const enlace = (i, k) => {
+    const t = (rt[i] || [])[k - c0];
+    let u = t && t.getLinkUrl();
+    if (!u && t) { const r = t.getRuns().find(x => x.getLinkUrl()); u = r && r.getLinkUrl(); }
+    if (!u) { const m = /HYPERLINK\("([^"]+)"/i.exec(((fm[i] || [])[k - c0]) || ''); u = m && m[1]; }
+    return u || '';
+  };
+
+  return inicios.map((r0, d) => {
+    const h = v[r0], sub = v[r0 + 1];
+    const c = {
+      ej: buscar(h, /^EJERCICIOS/i), ser: buscar(h, /^SERIES/i), rep: buscar(h, /^REPS?$/i),
+      rir: buscar(h, /^RIR$/i), des: buscar(h, /^DESCANSO/i), obs: buscar(h, /^OBSERVACIONES/i)
+    };
+    // En la fila de abajo hay dos grupos REPs/PESO/RIR/Descanso/Observaciones:
+    // el 1º es "Completar Alumno", el 2º es la semana anterior (se lee por posición, no por título).
+    const g = []; sub.forEach((x, k) => { if (/^REPS?$/i.test(txt(x))) g.push(k); });
+    const al = g[0], prev = g[1];
+    const vid = []; h.forEach((x, k) => { if (/^REFERENCIA$/i.test(txt(x))) vid.push(k); });
+    const fin = d + 1 < inicios.length ? inicios[d + 1] : v.length;
+
+    const ejercicios = [];
+    for (let i = r0 + 6; i < fin; i++) {            // r0+2..r0+5 son las 4 filas del sueño
+      if (!/^\d+$/.test(txt(v[i][c.ser]))) continue; // un ejercicio empieza donde hay nº de series
+      const n = parseInt(v[i][c.ser], 10), series = [], obsAnt = [];
+      for (let k = 0; k < n && v[i + k]; k++) {
+        const f = v[i + k];
+        const o = txt(f[prev + 4] || ''); if (o) obsAnt.push(o); // observación que la alumna dejó la semana anterior
+        series.push({
+          fila: i + 1 + k,
+          ant: { reps: n_(f[prev]), peso: n_(f[prev + 1]), rir: n_(f[prev + 2]), des: txt(f[prev + 3] || '') },
+          hoy: { reps: n_(f[al]),   peso: n_(f[al + 1]),   rir: n_(f[al + 2]) }
+        });
+      }
+      ejercicios.push({
+        nombre: v[i][c.ej], reps: v[i][c.rep], rir: v[i][c.rir], descanso: v[i][c.des],
+        nota: v[i][c.obs], obsHoy: txt(v[i][al + 4] || ''), antObs: obsAnt.join(' · '), videos: vid.map(k => enlace(i, k)).filter(Boolean), series
+      });
+    }
+    return {
+      titulo: txt(h.find(x => /^D[ÍI]A\s*\d+/i.test(txt(x)))),
+      r0, al,
+      sueno: { ant: v[r0 + 2][prev], hoy: v[r0 + 2][al] },
+      ejercicios
+    };
   });
-  $('list').innerHTML = h;
-  prog();
 }
 
-function go(i){ day = i; msg('', true); render(); }
-function setv(k, f, v){ touched = true; S[k] = S[k] || {}; S[k][f] = v; S[k].d = false; var b = event && event.target && event.target.parentNode.querySelector('.ok'); if (b) b.classList.remove('done'); msg('', true); }
-
-function tog(ei, s){
-  touched = true;
-  var d = day, k = key(d, ei, s), v = S[k] || {};
-  if (v.r === undefined || v.r === '' || v.k === undefined || v.k === '') { msg('Cargá reps y kilos antes de marcar la serie.', false); return; }
-  v.d = true; S[k] = v;
-  rest(restSec(D[d].ejercicios[ei].descanso));
-  escribir({ action: 'serie', d: d, e: ei, s: s, reps: v.r, peso: v.k, rir: v.i || '' })
-    .catch(function(){ v.d = false; render(); msg('No se pudo guardar esa serie. Probá de nuevo.', false); });
-  msg('', true); render();
+// Ejecutalo a mano desde el editor para verificar que lee bien tu plantilla (ver "Registro de ejecución")
+function diagnostico() {
+  const sh = semanaActual_(SpreadsheetApp.openById(ID_PLANILLA_PRUEBA));
+  Logger.log('Pestaña: ' + sh.getName());
+  parsear_(sh).forEach(d => {
+    Logger.log(d.titulo + ' → ' + d.ejercicios.length + ' ejercicios, sueño previo: ' + d.sueno.ant);
+    d.ejercicios.forEach(e => Logger.log('  ' + e.nombre + ' | ' + e.series.length + ' series | videos: ' + e.videos.length));
+  });
 }
-
-function saveSleep(v){
-  escribir({ action: 'sueno', d: day, horas: v })
-    .catch(function(){ msg('No se pudo guardar el sueño.', false); });
-}
-
-// Observaciones por ejercicio: se guardan solas al dejar de escribir (o al salir del cuadro).
-function setSt(k, t, ok){ var p = $('st_' + k); if (!p) return; p.style.color = ok ? 'var(--ok)' : 'var(--bad)'; p.textContent = t || ''; }
-function setobs(ei, v){
-  touched = true;
-  var d = day, k = d + '_' + ei;
-  O[k] = v; setSt(k, '', true);
-  clearTimeout(OT[k]);
-  OT[k] = setTimeout(function(){ saveObs(d, ei); }, 1200);
-}
-function saveObs(d, ei){
-  var k = d + '_' + ei;
-  clearTimeout(OT[k]);
-  setSt(k, 'Guardando…', true);
-  escribir({ action: 'obs', d: d, e: ei, texto: O[k] || '' })
-    .then(function(){ setSt(k, 'Guardado ✓', true); })
-    .catch(function(){ setSt(k, 'No se pudo guardar. Probá de nuevo.', false); });
-}
-
-function exDone(ei){ var x = D[day].ejercicios[ei]; return x.series.length > 0 && x.series.every(function(s, si){ return (S[key(day,ei,si)] || {}).d; }); }
-function counts(){
-  var a = 0, b = 0;
-  D[day].ejercicios.forEach(function(x, ei){ x.series.forEach(function(s, si){ b++; if ((S[key(day,ei,si)] || {}).d) a++; }); });
-  return [a, b];
-}
-function prog(){
-  var c = counts(), p = c[1] ? Math.round(c[0] / c[1] * 100) : 0;
-  $('plab').textContent = c[0] + ' de ' + c[1] + ' series completadas';
-  $('ppct').textContent = p + '%';
-  $('pb').style.width = p + '%';
-}
-function finish(){
-  var c = counts();
-  if (!c[0]) { msg('Marcá al menos una serie antes de terminar.', false); return; }
-  msg('Listo. Cada serie ya quedó guardada en tu planilla.', true);
-}
-
-function rest(sec){ clearInterval(T); left = sec; showRest(); T = setInterval(function(){ left--; if (left <= 0) { clearInterval(T); T = null; } showRest(); }, 1000); }
-function showRest(){
-  $('rest').innerHTML = T ? '<span style="font-size:20px;font-variant-numeric:tabular-nums">' + fmt(left) + '</span><span>descanso</span><a href="#" onclick="skip();return false" target="_self">Omitir</a>' : '<span>Descanso terminado</span><a href="#" onclick="skip();return false" target="_self">Cerrar</a>';
-}
-function skip(){ clearInterval(T); T = null; $('rest').textContent = ''; }
-</script>
-</body>
-</html>
