@@ -70,7 +70,7 @@ var qs = new URLSearchParams(location.search);
 var ID = qs.get('id') || '';
 var TOKEN = qs.get('t') || '';
 var D = [], day = 0, S = {}, O = {}, OT = {}, T = null, left = 0;
-// Semanas: SEMS = últimas 4 (la más nueva primero), SEL = la que se está viendo, RO = solo lectura (semanas anteriores).
+// Semanas: SEMS = últimas 4 (la más nueva primero), SEL = la que se está viendo. RO queda siempre en false (todas se pueden editar).
 var SEMS = [], SEL = '', RO = false, W = {}, ST = {}, REQ = 0, DBG = null;
 
 function $(i){ return document.getElementById(i); }
@@ -126,8 +126,8 @@ function leer(sem){
   }, 5);
 }
 // Las escrituras son "poner este valor en esta celda": repetirlas no duplica nada, así que es seguro reintentarlas.
-function escribir(body){
-  body.id = ID; body.t = TOKEN;
+function escribir(body, sem){
+  body.id = ID; body.t = TOKEN; body.semana = sem || SEL;
   var datos = JSON.stringify(body);
   return conReintentos(function(){
     var ctl = new AbortController(), to = setTimeout(function(){ ctl.abort(); }, 20000);
@@ -190,7 +190,7 @@ else {
 function init(r, restore){
   D = r.dias || [];
   if (r.actual !== false || !SEMS.length) SEMS = r.semanas || [r.semana];   // la lista de semanas la define la respuesta de la semana actual
-  SEL = r.semana; RO = r.actual === false; W[SEL] = r;
+  SEL = r.semana; RO = false; W[SEL] = r;   // las 4 semanas se pueden cargar y modificar
   if (day >= D.length) day = 0;
   var st = restore && ST[SEL];
   if (st) { S = st.S; O = st.O; }   // al volver a una semana, se conserva lo que ya se había cargado
@@ -268,7 +268,7 @@ function render(){
   prog();
 }
 
-// Selector de las últimas 4 semanas. Las anteriores se consultan en solo lectura.
+// Selector de las últimas 4 semanas (todas editables).
 function renderSemanas(){
   var el = $('wks'); if (!el) return;
   if (SEMS.length < 2) { el.style.display = 'none'; return; }
@@ -276,7 +276,7 @@ function renderSemanas(){
   var h = '';
   SEMS.forEach(function(n, i){
     var m = /^S(\d+)\s*-\s*(\d+\/\d+)/.exec(n);
-    h += '<button class="wk' + (n === SEL ? ' on' : '') + '" onclick="cambiarSemana(' + i + ')">' + (m ? 'Sem ' + m[1] : esc(n)) + '<small>' + (i === 0 ? 'Actual' : (m ? esc(m[2]) : '')) + '</small></button>';
+    h += '<button class="wk' + (n === SEL ? ' on' : '') + '" onclick="cambiarSemana(' + i + ')">' + (m ? 'Sem ' + m[1] : esc(n)) + '<small>' + (m ? esc(m[2]) : '') + '</small></button>';
   });
   el.innerHTML = h;
 }
@@ -302,14 +302,14 @@ function tog(ei, s){
   if (v.r === undefined || v.r === '' || v.k === undefined || v.k === '') { msg('Cargá reps y kilos antes de marcar la serie.', false); return; }
   v.d = true; S[k] = v;
   rest(restSec(D[d].ejercicios[ei].descanso));
-  escribir({ action: 'serie', d: d, e: ei, s: s, reps: v.r, peso: v.k, rir: v.i || '' })
+  escribir({ action: 'serie', d: d, e: ei, s: s, reps: v.r, peso: v.k, rir: v.i || '' }, sw)
     .catch(function(){ v.d = false; if (sw === SEL) render(); msg('No se pudo guardar esa serie. Probá de nuevo.', false); });
   msg('', true); render();
 }
 
 function saveSleep(v){
   if (RO) return;
-  escribir({ action: 'sueno', d: day, horas: v })
+  escribir({ action: 'sueno', d: day, horas: v }, SEL)
     .catch(function(){ msg('No se pudo guardar el sueño.', false); });
 }
 
@@ -318,19 +318,20 @@ function setSt(k, t, ok){ var p = $('st_' + k); if (!p) return; p.style.color = 
 function setobs(ei, v){
   if (RO) return;
   touched = true;
-  var d = day, k = d + '_' + ei;
+  var d = day, sw = SEL, k = d + '_' + ei, kt = sw + '|' + k;
   O[k] = v; setSt(k, '', true);
-  clearTimeout(OT[k]);
-  OT[k] = setTimeout(function(){ saveObs(d, ei, v); }, 1200);   // el texto viaja con el temporizador, así no se pierde si cambia de semana
+  clearTimeout(OT[kt]);
+  OT[kt] = setTimeout(function(){ saveObs(d, ei, v, sw); }, 1200);   // el texto y la semana viajan con el temporizador, así no se pierde ni va a otra semana si se cambia de pestaña
 }
-function saveObs(d, ei, texto){
-  if (texto === undefined && RO) return;
-  var k = d + '_' + ei;
-  clearTimeout(OT[k]);
-  setSt(k, 'Guardando…', true);
-  escribir({ action: 'obs', d: d, e: ei, texto: texto === undefined ? (O[k] || '') : texto })
-    .then(function(){ setSt(k, 'Guardado ✓', true); })
-    .catch(function(){ setSt(k, 'No se pudo guardar. Probá de nuevo.', false); });
+function saveObs(d, ei, texto, sem){
+  sem = sem || SEL;
+  var k = d + '_' + ei, kt = sem + '|' + k;
+  clearTimeout(OT[kt]);
+  var aca = function(t, ok){ if (sem === SEL) setSt(k, t, ok); };   // el aviso solo se muestra si esa semana sigue en pantalla
+  aca('Guardando…', true);
+  escribir({ action: 'obs', d: d, e: ei, texto: texto === undefined ? (O[k] || '') : texto }, sem)
+    .then(function(){ aca('Guardado ✓', true); })
+    .catch(function(){ aca('No se pudo guardar. Probá de nuevo.', false); });
 }
 
 function exDone(ei){ var x = D[day].ejercicios[ei]; return x.series.length > 0 && x.series.every(function(s, si){ return (S[key(day,ei,si)] || {}).d; }); }
