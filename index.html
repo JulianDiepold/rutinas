@@ -1,7 +1,10 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://script.google.com"><link rel="preconnect" href="https://script.googleusercontent.com" crossorigin>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..700&display=swap" rel="stylesheet"></noscript>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
@@ -83,12 +86,16 @@ function msg(t, ok){ var m = $('msg'); if (!m) return; m.style.color = ok ? 'var
 
 // ----- Comunicación con Apps Script -----
 // Lectura: GET. Escritura: POST con text/plain (evita el preflight de CORS, que Apps Script no soporta).
-function leer(sem){
-  var ctl = new AbortController(), to = setTimeout(function(){ ctl.abort(); }, 40000);
+function leer(sem, intento){
+  var ctl = new AbortController(), to = setTimeout(function(){ ctl.abort(); }, 30000);
   return fetch(API + '?action=rutina&id=' + encodeURIComponent(ID) + '&t=' + encodeURIComponent(TOKEN) + (sem ? '&semana=' + encodeURIComponent(sem) : ''), { signal: ctl.signal })
     .then(function(r){ return r.json(); })
     .then(function(j){ if (!j.ok) throw new Error(j.error || 'Error'); return j.data; })
-    .finally(function(){ clearTimeout(to); });
+    .finally(function(){ clearTimeout(to); })
+    .catch(function(e){   // en redes móviles inestables, un reintento automático resuelve la mayoría de los cortes
+      if ((intento || 0) < 1 && !(e && e.message === 'Link inválido')) return new Promise(function(res){ setTimeout(res, 1200); }).then(function(){ return leer(sem, 1); });
+      throw e;
+    });
 }
 function escribir(body){
   body.id = ID; body.t = TOKEN;
@@ -101,7 +108,7 @@ function falloCarga(e){
   var t = (e && e.message === 'Link inválido')
     ? 'Este link no es válido. Pedile a tu entrenador que te lo envíe de nuevo.'
     : 'No pude abrir tu rutina. Revisá tu conexión e intentá de nuevo.';
-  $('app').innerHTML = '<p class="meta">' + t + '</p>';
+  $('app').innerHTML = '<p class="meta">' + t + '</p>' + ((e && e.message === 'Link inválido') ? '' : '<button class="main" style="margin-top:14px" onclick="location.reload()">Reintentar</button>');
 }
 
 // Muestra al instante la última rutina guardada en este dispositivo y la actualiza en segundo plano.
@@ -113,11 +120,14 @@ if (!ID || !TOKEN) { falloCarga({ message: 'Link inválido' }); }
 else {
   var cached = leerCache();
   if (cached && cached.dias && cached.dias.length) { init(cached); shown = true; }
+  var slowT = setTimeout(function(){ if (!shown) $('app').innerHTML = '<p class="meta">Sigue cargando… tu conexión parece lenta, un momento más.</p>'; }, 8000);
   leer().then(function(r){
+    clearTimeout(slowT);
     guardarCache(r);
     W[r.semana] = r;
     if (!shown || !touched) { init(r); shown = true; }
   }).catch(function(e){
+    clearTimeout(slowT);
     if (e && e.message === 'Link inválido') { try { localStorage.removeItem(CK); } catch(x){} falloCarga(e); }
     else if (!shown) falloCarga(e);
   });
@@ -125,7 +135,8 @@ else {
 
 function init(r, restore){
   D = r.dias || [];
-  SEMS = r.semanas || [r.semana]; SEL = r.semana; RO = r.actual === false; W[SEL] = r;
+  if (r.actual !== false || !SEMS.length) SEMS = r.semanas || [r.semana];   // la lista de semanas la define la respuesta de la semana actual
+  SEL = r.semana; RO = r.actual === false; W[SEL] = r;
   if (day >= D.length) day = 0;
   var st = restore && ST[SEL];
   if (st) { S = st.S; O = st.O; }   // al volver a una semana, se conserva lo que ya se había cargado
