@@ -2,9 +2,6 @@
 <html lang="es">
 <head>
 <link rel="preconnect" href="https://script.google.com"><link rel="preconnect" href="https://script.googleusercontent.com" crossorigin>
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
-<noscript><link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..700&display=swap" rel="stylesheet"></noscript>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
@@ -74,7 +71,7 @@ var ID = qs.get('id') || '';
 var TOKEN = qs.get('t') || '';
 var D = [], day = 0, S = {}, O = {}, OT = {}, T = null, left = 0;
 // Semanas: SEMS = últimas 4 (la más nueva primero), SEL = la que se está viendo, RO = solo lectura (semanas anteriores).
-var SEMS = [], SEL = '', RO = false, W = {}, ST = {}, REQ = 0;
+var SEMS = [], SEL = '', RO = false, W = {}, ST = {}, REQ = 0, DBG = null;
 
 function $(i){ return document.getElementById(i); }
 function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
@@ -87,10 +84,16 @@ function msg(t, ok){ var m = $('msg'); if (!m) return; m.style.color = ok ? 'var
 // ----- Comunicación con Apps Script -----
 // Lectura: GET. Escritura: POST con text/plain (evita el preflight de CORS, que Apps Script no soporta).
 function leer(sem, intento){
-  var ctl = new AbortController(), to = setTimeout(function(){ ctl.abort(); }, 30000);
+  var t0 = performance.now(), ctl = new AbortController(), to = setTimeout(function(){ ctl.abort(); }, 30000);
   return fetch(API + '?action=rutina&id=' + encodeURIComponent(ID) + '&t=' + encodeURIComponent(TOKEN) + (sem ? '&semana=' + encodeURIComponent(sem) : ''), { signal: ctl.signal })
-    .then(function(r){ return r.json(); })
-    .then(function(j){ if (!j.ok) throw new Error(j.error || 'Error'); return j.data; })
+    .then(function(r){ return r.text(); })
+    .then(function(t){
+      var j = JSON.parse(t);
+      if (!j.ok) throw new Error(j.error || 'Error');
+      DBG = { ms: Math.round(performance.now() - t0), kb: Math.round(t.length / 102.4) / 10, srv: j.data && j.data.t };
+      mostrarDbg();
+      return j.data;
+    })
     .finally(function(){ clearTimeout(to); })
     .catch(function(e){   // en redes móviles inestables, un reintento automático resuelve la mayoría de los cortes
       if ((intento || 0) < 1 && !(e && e.message === 'Link inválido')) return new Promise(function(res){ setTimeout(res, 1200); }).then(function(){ return leer(sem, 1); });
@@ -102,6 +105,26 @@ function escribir(body){
   return fetch(API, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(body) })
     .then(function(r){ return r.json(); })
     .then(function(j){ if (!j.ok) throw new Error(j.error || 'Error'); return j; });
+}
+
+// La fuente se pide recién cuando la rutina ya se ve, para que no compita con los datos por la conexión.
+function cargarFuente(){
+  if (window.__fuente) return; window.__fuente = 1;
+  var l = document.createElement('link'); l.rel = 'stylesheet';
+  l.href = 'https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..700&display=swap';
+  document.head.appendChild(l);
+}
+
+// Con ?debug=1 al final del link se muestra cuánto tardó cada parte (sirve para saber dónde está la demora).
+function mostrarDbg(){
+  if (!qs.get('debug') || !DBG) return;
+  var el = $('dbg');
+  if (!el) {
+    el = document.createElement('div'); el.id = 'dbg';
+    el.style.cssText = 'position:fixed;left:8px;top:8px;z-index:9;background:rgba(0,0,0,.8);color:#fff;font:12px/1.35 monospace;padding:6px 9px;border-radius:8px;max-width:92%';
+    document.body.appendChild(el);
+  }
+  el.textContent = 'total ' + (DBG.ms / 1000).toFixed(1) + ' s · servidor ' + (DBG.srv ? (DBG.srv.ms / 1000).toFixed(1) + ' s (' + DBG.srv.via + ')' : '?') + ' · ' + DBG.kb + ' KB';
 }
 
 function falloCarga(e){
@@ -158,6 +181,7 @@ function init(r, restore){
     '<div class="bar"><i id="pb"></i></div><button class="main" id="fin" onclick="finish()">Terminar entrenamiento</button>' +
     '<p id="msg" style="font-size:13px;margin:8px 0 0;min-height:18px"></p></div>';
   render();
+  setTimeout(cargarFuente, 600);
 }
 
 function render(){
