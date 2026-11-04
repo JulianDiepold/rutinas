@@ -38,9 +38,11 @@ button,input,textarea{font:inherit;color:inherit}
 .pc span{color:var(--tx2)}
 .pobs{margin:8px 0 0;font-size:12px;line-height:1.4;color:var(--tx2)}
 .st{margin:4px 0 0;font-size:12px;min-height:16px}
-.row{display:grid;grid-template-columns:34px 1fr 1fr 1fr 46px;gap:6px;align-items:center;margin-top:6px}
+.row{display:grid;grid-template-columns:44px 1fr 1fr 1fr 46px;gap:6px;align-items:center;margin-top:6px}
 .row.hd{font-size:11px;color:var(--tx2);text-align:center;margin-top:14px}
-.row .l{font-size:13px;color:var(--tx2);text-align:center}
+.row .l{font-size:13px;color:var(--tx2);text-align:center;line-height:1.15}
+.row .l small{display:block;font-size:11px;color:var(--acc);font-weight:600}
+.row .l small i{display:block;font-style:normal;color:var(--tx2);font-weight:400}
 .row input{width:100%;min-width:0;height:44px;font-size:16px;font-weight:500;text-align:center;border:0;border-radius:12px;background:var(--bg)}
 .row input::placeholder{color:var(--tx2);opacity:.5;font-weight:400}
 input:focus,textarea:focus,button:focus-visible,a:focus-visible{outline:2px solid var(--acc);outline-offset:1px}
@@ -242,10 +244,11 @@ function render(){
     h += '<div class="row hd"><span>serie</span><span>reps</span><span>kg</span><span>RIR</span><span></span></div>';
     x.series.forEach(function(s, si){
       var k = key(day, ei, si), v = S[k] || {};
-      h += '<div class="row"><span class="l">' + (si+1) + '</span>' +
-        '<input inputmode="decimal" placeholder="' + esc(s.ant.reps !== '' ? s.ant.reps : 'reps') + '" value="' + esc(v.r == null ? '' : v.r) + '" oninput="setv(\'' + k + '\',\'r\',this.value)" aria-label="Repeticiones">' +
-        '<input inputmode="decimal" placeholder="' + esc(s.ant.peso !== '' ? s.ant.peso : 'kg') + '" value="' + esc(v.k == null ? '' : v.k) + '" oninput="setv(\'' + k + '\',\'k\',this.value)" aria-label="Kilos">' +
-        '<input inputmode="decimal" placeholder="RIR" value="' + esc(v.i == null ? '' : v.i) + '" oninput="setv(\'' + k + '\',\'i\',this.value)" aria-label="RIR">' +
+      var ob = s.obj && s.obj.reps ? '<small>' + esc(s.obj.reps) + '</small>' : '';
+      h += '<div class="row"><span class="l">' + (si+1) + ob + '</span>' +
+        '<input inputmode="numeric" pattern="[0-9]*" placeholder="' + esc(s.ant.reps !== '' ? s.ant.reps : 'reps') + '" value="' + esc(v.r == null ? '' : v.r) + '" oninput="setv(\'' + k + '\',\'r\',this.value)" aria-label="Repeticiones">' +
+        '<input inputmode="numeric" pattern="[0-9]*" placeholder="' + esc(s.ant.peso !== '' ? s.ant.peso : 'kg') + '" value="' + esc(v.k == null ? '' : v.k) + '" oninput="setv(\'' + k + '\',\'k\',this.value)" aria-label="Kilos">' +
+        '<input inputmode="numeric" pattern="[0-9]*" placeholder="RIR" value="' + esc(v.i == null ? '' : v.i) + '" oninput="setv(\'' + k + '\',\'i\',this.value)" aria-label="RIR">' +
         '<button class="ok' + (v.d ? ' done' : '') + '" onclick="tog(' + ei + ',' + si + ')" aria-label="Guardar serie">✓</button></div>';
     });
     if (x.videos.length) {
@@ -293,13 +296,23 @@ function cambiarSemana(i){
 }
 
 function go(i){ day = i; msg('', true); render(); }
-function setv(k, f, v){ if (RO) return; touched = true; S[k] = S[k] || {}; S[k][f] = v; S[k].d = false; var b = event && event.target && event.target.parentNode.querySelector('.ok'); if (b) b.classList.remove('done'); msg('', true); }
+// Solo números enteros en reps, kg y RIR.
+function soloNum(v, dec){
+  v = String(v).replace(dec ? /[^\d.,]/g : /\D/g, '');
+  if (dec) { var i = v.search(/[.,]/); if (i >= 0) v = v.slice(0, i + 1) + v.slice(i + 1).replace(/[.,]/g, ''); }
+  return v.slice(0, 6);
+}
+function setv(k, f, v){ if (RO) return;
+  var el = event && event.target, lim = soloNum(v, false);
+  if (el && el.value !== lim) el.value = lim;
+  v = lim; touched = true; S[k] = S[k] || {}; S[k][f] = v; S[k].d = false; var b = event && event.target && event.target.parentNode.querySelector('.ok'); if (b) b.classList.remove('done'); msg('', true); }
 
 function tog(ei, s){
   if (RO) return;
   touched = true;
   var d = day, k = key(d, ei, s), v = S[k] || {}, sw = SEL;
-  if (v.r === undefined || v.r === '' || v.k === undefined || v.k === '') { msg('Cargá reps y kilos antes de marcar la serie.', false); return; }
+  v.r = soloNum(v.r == null ? '' : v.r, false); v.k = soloNum(v.k == null ? '' : v.k, false); v.i = soloNum(v.i == null ? '' : v.i, false);
+  if (v.r === '' || v.k === '' || isNaN(parseFloat(v.r.replace(',', '.'))) || isNaN(parseFloat(v.k.replace(',', '.')))) { msg('Cargá reps y kilos antes de marcar la serie.', false); return; }
   v.d = true; S[k] = v;
   rest(restSec(D[d].ejercicios[ei].descanso));
   escribir({ action: 'serie', d: d, e: ei, s: s, reps: v.r, peso: v.k, rir: v.i || '' }, sw)
