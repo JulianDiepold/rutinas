@@ -48,7 +48,10 @@ button,input,textarea{font:inherit;color:inherit}
 input:focus,textarea:focus,button:focus-visible,a:focus-visible{outline:2px solid var(--acc);outline-offset:1px}
 .ok{height:44px;width:46px;border-radius:12px;border:0;background:var(--bg);color:var(--tx2);font-size:18px;cursor:pointer}
 .ok.done{background:var(--ok);color:var(--card)}
-.sm{font-size:13px;height:34px;padding:0 13px;border-radius:999px;border:0;background:var(--accbg);color:var(--acc);font-weight:500;cursor:pointer;display:inline-flex;align-items:center;text-decoration:none}
+.vr{display:flex;align-items:center;gap:8px;justify-content:space-between;margin-top:8px;padding:8px 10px;border-radius:12px;background:var(--bg)}
+.vr b{font-size:14px;font-weight:600;line-height:1.2}
+.vr i{font-style:normal;color:var(--acc);margin-right:6px}
+.sm{white-space:nowrap;flex:none;font-size:13px;height:34px;padding:0 13px;border-radius:999px;border:0;background:var(--accbg);color:var(--acc);font-weight:500;cursor:pointer;display:inline-flex;align-items:center;text-decoration:none}
 #sleep{border:0;border-radius:12px;background:var(--bg);font-size:16px}
 textarea{border:0;border-radius:12px;background:var(--bg);padding:9px 11px}
 .bar{height:8px;background:var(--bar);border-radius:4px;overflow:hidden}
@@ -251,9 +254,18 @@ function render(){
         '<input inputmode="numeric" pattern="[0-9]*" placeholder="RIR" value="' + esc(v.i == null ? '' : v.i) + '" oninput="setv(\'' + k + '\',\'i\',this.value)" aria-label="RIR">' +
         '<button class="ok' + (v.d ? ' done' : '') + '" onclick="tog(' + ei + ',' + si + ')" aria-label="Guardar serie">✓</button></div>';
     });
-    if (x.videos.length) {
+    var vs = x.vids && x.vids.length ? x.vids : (x.videos || []).map(function(u, i){ return { u: u, t: 'Referencia ' + (i + 1) }; });
+    var nm = x.nombres && x.nombres.length > 1 ? x.nombres : null;
+    var btn = function(v){ return '<a class="sm" href="' + esc(v.u) + '" target="_blank" rel="noopener">▶ ' + esc(v.t || 'Video') + '</a>'; };
+    if (nm) {
+      // Ejercicio con variantes: cada nombre con su video (Referencia 1 ↔ 1er nombre, Referencia 2 ↔ 2º…); los videos sobrantes van aparte.
+      h += '<p class="pl" style="margin:12px 0 0">Variantes (elegí una)</p>';
+      nm.forEach(function(n, j){ h += '<div class="vr"><b><i>' + String.fromCharCode(65 + j) + '</i>' + esc(n) + '</b>' + (vs[j] ? btn(vs[j]) : '') + '</div>'; });
+      vs = vs.slice(nm.length);
+    }
+    if (vs.length) {
       h += '<div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">';
-      x.videos.forEach(function(u, vi){ h += '<a class="sm" href="' + esc(u) + '" target="_blank" rel="noopener">▶ Video ' + (vi+1) + '</a>'; });
+      vs.forEach(function(v){ h += btn(v); });
       h += '</div>';
     }
     var ok = day + '_' + ei;
