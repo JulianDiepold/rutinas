@@ -76,7 +76,7 @@ var qs = new URLSearchParams(location.search);
 var ID = qs.get('id') || '';
 var TOKEN = qs.get('t') || '';
 var D = [], day = 0, S = {}, O = {}, OT = {}, T = null, left = 0;
-// Semanas: SEMS = últimas 4 (la más nueva primero), SEL = la que se está viendo. RO queda siempre en false (todas se pueden editar).
+// Semanas: SEMS = últimas 4 (la más nueva primero; en pantalla se muestran de la más vieja a la más nueva), SEL = la que se está viendo. RO queda siempre en false (todas se pueden editar).
 var SEMS = [], SEL = '', RO = false, W = {}, ST = {}, REQ = 0, DBG = null;
 
 function $(i){ return document.getElementById(i); }
@@ -84,7 +84,7 @@ function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(
 function key(d,e,s){ return d + '_' + e + '_' + s; }
 function cap(s){ s = String(s || '').toLowerCase(); return s.charAt(0).toUpperCase() + s.slice(1); }
 function fmt(n){ return Math.floor(n/60) + ':' + ('0' + (n % 60)).slice(-2); }
-function restSec(t){ var m = /(\d+)/.exec(t || ''); return m ? parseInt(m[1],10) * 60 : 120; }
+function restSec(t){ return 180; }   // descanso fijo: 3 minutos
 function msg(t, ok){ var m = $('msg'); if (!m) return; m.style.color = ok ? 'var(--ok)' : 'var(--bad)'; m.textContent = t || ''; }
 
 // ----- Comunicación con Apps Script -----
@@ -295,10 +295,10 @@ function renderSemanas(){
   if (SEMS.length < 2) { el.style.display = 'none'; return; }
   el.style.display = '';
   var h = '';
-  SEMS.forEach(function(n, i){
-    var m = /^S(\d+)\s*-\s*(\d+\/\d+)/.exec(n);
+  for (var i = SEMS.length - 1; i >= 0; i--) {   // SEMS viene con la más nueva primero: se muestra al revés (la más vieja a la izquierda, la actual al final)
+    var n = SEMS[i], m = /^S(\d+)\s*-\s*(\d+\/\d+)/.exec(n);
     h += '<button class="wk' + (n === SEL ? ' on' : '') + '" onclick="cambiarSemana(' + i + ')">' + (m ? 'Sem ' + m[1] : esc(n)) + '<small>' + (m ? esc(m[2]) : '') + '</small></button>';
-  });
+  }
   el.innerHTML = h;
 }
 function cambiarSemana(i){
@@ -384,7 +384,7 @@ function finish(){
   msg('Listo. Cada serie ya quedó guardada en tu planilla.', true);
 }
 
-function rest(sec){ clearInterval(T); left = sec; showRest(); T = setInterval(function(){ left--; if (left <= 0) { clearInterval(T); T = null; } showRest(); }, 1000); }
+function rest(sec){ clearInterval(T); left = sec; T = setInterval(function(){ left--; if (left <= 0) { clearInterval(T); T = null; } showRest(); }, 1000); showRest(); }   // T se asigna antes de mostrar, así no aparece "Descanso terminado" el primer segundo
 function showRest(){
   $('rest').innerHTML = T ? '<span style="font-size:20px;font-variant-numeric:tabular-nums">' + fmt(left) + '</span><span>descanso</span><a href="#" onclick="skip();return false" target="_self">Omitir</a>' : '<span>Descanso terminado</span><a href="#" onclick="skip();return false" target="_self">Cerrar</a>';
 }
