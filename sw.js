@@ -1,6 +1,8 @@
 // Guarda la página en el celular: abre al instante y aunque la red esté cortada o cambiando.
 // Solo toca la carga de la página (navegación). Los pedidos a Apps Script no pasan por acá.
-const CACHE = 'rutina-v1';
+// IMPORTANTE: cada vez que cambies index.html, subí el número de versión (v2 -> v3...)
+// para que los celulares descarguen la página nueva de inmediato y no la vieja guardada.
+const CACHE = 'rutina-v2';
 const CLAVE = self.registration.scope;   // una sola página; el ?id=...&t=... lo lee la propia página
 
 self.addEventListener('install', e => {
