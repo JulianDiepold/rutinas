@@ -59,9 +59,15 @@ textarea{border:0;border-radius:12px;background:var(--bg);padding:9px 11px}
 .bar i{display:block;height:100%;background:var(--ok);width:0;transition:width .25s}
 .main{width:100%;margin-top:14px;height:48px;border-radius:14px;border:0;background:var(--acc);color:var(--onacc);font-weight:600;font-size:16px;cursor:pointer}
 a{color:var(--acc)}
-#rest{position:fixed;left:50%;transform:translateX(-50%);bottom:max(14px,env(safe-area-inset-bottom));z-index:5;background:var(--acc);color:var(--onacc);border-radius:999px;padding:12px 22px;font-weight:600;display:flex;gap:12px;align-items:baseline;white-space:nowrap;box-shadow:0 10px 28px rgba(43,26,15,.3)}
+#rest{position:fixed;left:50%;transform:translateX(-50%);bottom:max(14px,env(safe-area-inset-bottom));z-index:5;max-width:calc(100% - 16px);background:var(--acc);color:var(--onacc);border-radius:999px;padding:8px 10px 8px 14px;font-weight:600;display:flex;gap:10px;align-items:center;white-space:nowrap;box-shadow:0 10px 28px rgba(43,26,15,.3)}
 #rest:empty{display:none}
-#rest a{color:var(--onacc);opacity:.85;font-weight:500;font-size:14px}
+#rest .bl{display:flex;flex-direction:column;gap:3px;min-width:52px}
+#rest .bl b{display:block;font-size:22px;line-height:1;font-variant-numeric:tabular-nums}
+#rest .bl.e b{font-size:18px;font-weight:500}
+#rest .bl small{font-size:10px;font-weight:500;opacity:.85;letter-spacing:.02em}
+#rest .sep{width:1px;align-self:stretch;background:rgba(255,255,255,.3)}
+#rest button{border:0;border-radius:999px;height:34px;padding:0 10px;background:rgba(255,255,255,.2);color:inherit;font-size:13px;font-weight:600;cursor:pointer}
+#rest a{color:var(--onacc);opacity:.85;font-weight:500;font-size:14px;padding:0 4px}
 @media (prefers-reduced-motion:reduce){.bar i{transition:none}}
 </style>
 </head>
@@ -384,9 +390,20 @@ function finish(){
   msg('Listo. Cada serie ya quedó guardada en tu planilla.', true);
 }
 
-function rest(sec){ clearInterval(T); left = sec; T = setInterval(function(){ left--; if (left <= 0) { clearInterval(T); T = null; } showRest(); }, 1000); showRest(); }   // T se asigna antes de mostrar, así no aparece "Descanso terminado" el primer segundo
+// Descanso: FALTAN (cuenta regresiva) y DESCANSADO (tiempo real). Se calcula con la hora, no con "ticks", así no se atrasa si el celular pausa la pestaña.
+var TS = 0, TT = 0, EL = 0;
+function rest(sec){ clearInterval(T); TS = Date.now(); TT = sec; T = setInterval(tick, 500); tick(); }
+function tick(){
+  EL = Math.floor((Date.now() - TS) / 1000); left = TT - EL;
+  if (left <= 0) { left = 0; clearInterval(T); T = null; }
+  showRest();
+}
+function ajustar(d){ if (!T) return; TT = Math.max(0, TT + d); tick(); }   // -30 s / +30 s: cambia lo que falta, no lo descansado
 function showRest(){
-  $('rest').innerHTML = T ? '<span style="font-size:20px;font-variant-numeric:tabular-nums">' + fmt(left) + '</span><span>descanso</span><a href="#" onclick="skip();return false" target="_self">Omitir</a>' : '<span>Descanso terminado</span><a href="#" onclick="skip();return false" target="_self">Cerrar</a>';
+  $('rest').innerHTML = T
+    ? '<div class="bl"><b>' + fmt(left) + '</b><small>FALTAN</small></div><div class="sep"></div><div class="bl e"><b>' + fmt(EL) + '</b><small>DESCANSADO</small></div>' +
+      '<button onclick="ajustar(-30)" aria-label="Restar 30 segundos">−30 s</button><button onclick="ajustar(30)" aria-label="Sumar 30 segundos">+30 s</button><a href="#" onclick="skip();return false" target="_self">Omitir</a>'
+    : '<span>Descanso terminado · ' + fmt(EL) + '</span><button onclick="rest(30)">+30 s</button><a href="#" onclick="skip();return false" target="_self">Cerrar</a>';
 }
 function skip(){ clearInterval(T); T = null; $('rest').textContent = ''; }
 </script>
