@@ -37,7 +37,6 @@ button,input,textarea{font:inherit;color:inherit}
 .pc b{font-weight:600}
 .pc span{color:var(--tx2)}
 .pobs{margin:8px 0 0;font-size:12px;line-height:1.4;color:var(--tx2)}
-.st{margin:4px 0 0;font-size:12px;min-height:16px}
 .row{display:grid;grid-template-columns:44px 1fr 1fr 1fr 46px;gap:6px;align-items:center;margin-top:6px}
 .row.hd{font-size:11px;color:var(--tx2);text-align:center;margin-top:14px}
 .row .l{font-size:13px;color:var(--tx2);text-align:center;line-height:1.15}
@@ -81,7 +80,7 @@ var API = 'https://script.google.com/macros/s/AKfycbymJTRn0wWMrBHstnMuKD2dmnK-Vh
 var qs = new URLSearchParams(location.search);
 var ID = qs.get('id') || '';
 var TOKEN = qs.get('t') || '';
-var D = [], day = 0, S = {}, O = {}, OT = {}, T = null, left = 0;
+var D = [], day = 0, S = {}, O = {}, T = null, left = 0;
 // Semanas: SEMS = últimas 4 (la más nueva primero; en pantalla se muestran de la más vieja a la más nueva), SEL = la que se está viendo. RO queda siempre en false (todas se pueden editar).
 var SEMS = [], SEL = '', RO = false, W = {}, ST = {}, REQ = 0, DBG = null;
 
@@ -138,7 +137,8 @@ function leer(sem){
   }, 5);
 }
 // Las escrituras son "poner este valor en esta celda": repetirlas no duplica nada, así que es seguro reintentarlas.
-function escribir(body, sem){
+// Los reintentos largos los maneja la cola de pendientes (vaciar), por eso acá son pocos.
+function enviar(body, sem){
   body.id = ID; body.t = TOKEN; body.semana = sem || SEL;
   var datos = JSON.stringify(body);
   return conReintentos(function(){
@@ -147,7 +147,7 @@ function escribir(body, sem){
       .then(function(r){ return r.json(); })
       .then(function(j){ if (!j.ok) throw new Error(j.error || 'Error'); return j; })
       .finally(function(){ clearTimeout(to); });
-  }, 5);
+  }, 2);
 }
 
 // La fuente se pide recién cuando la rutina ya se ve, para que no compita con los datos por la conexión.
@@ -182,6 +182,76 @@ var CK = 'rutina_' + ID, touched = false, shown = false;
 function guardarCache(r){ try { localStorage.setItem(CK, JSON.stringify(r)); } catch(e){} }
 function leerCache(){ try { return JSON.parse(localStorage.getItem(CK)); } catch(e){ return null; } }
 
+// ===== Almacenamiento local: cola de pendientes + borradores =====
+// Todo cambio se guarda primero en el celular (síncrono) y después se intenta enviar a la planilla.
+// OUT = cambios que todavía no llegaron a la planilla. DR = valores escritos sin tocar ✓ (borradores).
+var OK_ = 'out_' + ID, DK_ = 'dr_' + ID, OUT = {}, DR = {}, flushing = false, dirty = false, RT = null, DT = null;
+function lsGet(k){ try { return JSON.parse(localStorage.getItem(k)) || {}; } catch(e){ return {}; } }
+function lsSet(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){} }
+OUT = lsGet(OK_); DR = lsGet(DK_);
+
+// Aplica un cambio pendiente sobre los datos de una semana (en memoria)
+function aplicar(r, b){
+  var d = r && r.dias && r.dias[b.d]; if (!d) return;
+  if (b.action === 'serie') {
+    var x = d.ejercicios[b.e], s = x && x.series[b.s];
+    if (s) { s.hoy.reps = b.reps; s.hoy.peso = b.peso; s.hoy.rir = b.rir; }
+  }
+  else if (b.action === 'obs') { if (d.ejercicios[b.e]) d.ejercicios[b.e].obsHoy = b.texto; }
+  else if (b.action === 'sueno') d.sueno.hoy = b.horas + 'h';
+}
+function aplicarPend(r){
+  if (!r) return;
+  Object.keys(OUT).forEach(function(k){ if (OUT[k].sem === r.semana) aplicar(r, OUT[k].body); });
+}
+
+function encolar(clave, body, sem, demora){
+  OUT[clave] = { body: body, sem: sem, ts: Date.now() };
+  lsSet(OK_, OUT);
+  if (W[sem]) { aplicar(W[sem], body); if (W[sem].actual !== false) guardarCache(W[sem]); }
+  estadoPend();
+  clearTimeout(DT); DT = setTimeout(vaciar, demora || 0);
+}
+
+function vaciar(){
+  if (flushing) { dirty = true; return; }
+  clearTimeout(RT);
+  pasada(Object.keys(OUT), 0);
+}
+function pasada(ks, i){
+  if (i === 0) {
+    if (!ks.length) { estadoPend(); return; }
+    if (navigator.onLine === false) { estadoPend(); RT = setTimeout(vaciar, 15000); return; }
+    flushing = true; dirty = false;
+  }
+  if (i >= ks.length) {
+    flushing = false; estadoPend();
+    if (dirty) vaciar();                                                  // hubo cambios nuevos mientras se enviaba
+    else if (Object.keys(OUT).length) RT = setTimeout(vaciar, 15000);     // quedó algo: reintenta en 15 s
+    return;
+  }
+  var k = ks[i], it = OUT[k];
+  if (!it) { pasada(ks, i + 1); return; }
+  var ts = it.ts;
+  enviar(it.body, it.sem).then(function(){
+    if (OUT[k] && OUT[k].ts === ts) { delete OUT[k]; lsSet(OK_, OUT); estadoPend(); }   // si el alumno lo cambió mientras se enviaba, queda para la próxima vuelta
+    pasada(ks, i + 1);
+  }).catch(function(e){
+    if (e && e.message === 'Link inválido') { flushing = false; return; }
+    pasada(ks, i + 1);
+  });
+}
+
+function estadoPend(){
+  var p = $('pend'); if (!p) return;
+  var n = Object.keys(OUT).length;
+  p.style.color = 'var(--tx2)';
+  p.textContent = n ? '⏳ ' + n + ' cambio' + (n > 1 ? 's' : '') + ' guardado' + (n > 1 ? 's' : '') + ' en tu celular, enviando a la planilla…' : '';
+}
+
+window.addEventListener('online', function(){ vaciar(); });
+document.addEventListener('visibilitychange', function(){ if (!document.hidden) vaciar(); });
+
 if (!ID || !TOKEN) { falloCarga({ message: 'Link inválido' }); }
 else {
   var cached = leerCache();
@@ -189,6 +259,7 @@ else {
   var slowT = setTimeout(function(){ if (!shown) $('app').innerHTML = '<p class="meta">Sigue cargando… tu conexión parece lenta, un momento más.</p>'; }, 8000);
   leer().then(function(r){
     clearTimeout(slowT);
+    aplicarPend(r);     // superpone lo que aún no llegó a la planilla
     guardarCache(r);
     W[r.semana] = r;
     if (!shown || !touched) { init(r); shown = true; }
@@ -200,6 +271,7 @@ else {
 }
 
 function init(r, restore){
+  aplicarPend(r);
   D = r.dias || [];
   if (r.actual !== false || !SEMS.length) SEMS = r.semanas || [r.semana];   // la lista de semanas la define la respuesta de la semana actual
   SEL = r.semana; RO = false; W[SEL] = r;   // las 4 semanas se pueden cargar y modificar
@@ -211,6 +283,11 @@ function init(r, restore){
     D.forEach(function(d, di){ d.ejercicios.forEach(function(x, ei){ O[di + '_' + ei] = x.obsHoy || ''; x.series.forEach(function(s, si){
       if (s.hoy.reps !== '' && s.hoy.peso !== '') S[key(di,ei,si)] = { r: s.hoy.reps, k: s.hoy.peso, i: s.hoy.rir, d: true };
     }); }); });
+    // Borradores: lo escrito sin tocar ✓ se recupera al reabrir
+    var dr = DR[SEL] || {};
+    Object.keys(dr).forEach(function(k){
+      if (!(S[k] && S[k].d)) S[k] = { r: dr[k].r, k: dr[k].k, i: dr[k].i, d: false };
+    });
   }
   $('app').innerHTML =
     '<h1>Tu rutina</h1><p class="meta" id="sub"></p>' +
@@ -222,9 +299,11 @@ function init(r, restore){
     '<div id="list"></div>' +
     '<div class="card"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px"><span id="plab" style="color:var(--tx2)"></span><span id="ppct"></span></div>' +
     '<div class="bar"><i id="pb"></i></div><button class="main" id="fin" onclick="finish()">Terminar entrenamiento</button>' +
+    '<p id="pend" class="meta" style="margin-top:8px"></p>' +
     '<p id="msg" style="font-size:13px;margin:8px 0 0;min-height:18px"></p></div>';
   render();
   setTimeout(cargarFuente, 600);
+  estadoPend(); vaciar();
 }
 
 function render(){
@@ -282,8 +361,7 @@ function render(){
     }
     var ok = day + '_' + ei;
     h += '<label class="pl" for="obs' + ei + '" style="display:block;margin:12px 0 6px">Tus observaciones</label>' +
-      '<textarea id="obs' + ei + '" rows="2" style="width:100%;font-size:14px;padding:8px" placeholder="Anotá cómo te fue, qué sentiste o tus dudas" oninput="setobs(' + ei + ',this.value)" onchange="saveObs(day,' + ei + ')">' + esc(O[ok] || '') + '</textarea>' +
-      '<p class="st" id="st_' + ok + '"></p>';
+      '<textarea id="obs' + ei + '" rows="2" style="width:100%;font-size:14px;padding:8px" placeholder="Anotá cómo te fue, qué sentiste o tus dudas" oninput="setobs(' + ei + ',this.value)" onchange="saveObs()">' + esc(O[ok] || '') + '</textarea>';
     h += '</div>';
   });
   $('list').innerHTML = h;
@@ -329,7 +407,10 @@ function soloNum(v, dec){
 function setv(k, f, v){ if (RO) return;
   var el = event && event.target, lim = soloNum(v, f !== 'r');
   if (el && el.value !== lim) el.value = lim;
-  v = lim; touched = true; S[k] = S[k] || {}; S[k][f] = v; S[k].d = false; var b = event && event.target && event.target.parentNode.querySelector('.ok'); if (b) b.classList.remove('done'); msg('', true); }
+  v = lim; touched = true; S[k] = S[k] || {}; S[k][f] = v; S[k].d = false;
+  // borrador local: sobrevive aunque no se toque ✓
+  DR[SEL] = DR[SEL] || {}; DR[SEL][k] = { r: S[k].r, k: S[k].k, i: S[k].i }; lsSet(DK_, DR);
+  var b = event && event.target && event.target.parentNode.querySelector('.ok'); if (b) b.classList.remove('done'); msg('', true); }
 
 function tog(ei, s){
   if (RO) return;
@@ -338,38 +419,26 @@ function tog(ei, s){
   v.r = soloNum(v.r == null ? '' : v.r, false); v.k = soloNum(v.k == null ? '' : v.k, true); v.i = soloNum(v.i == null ? '' : v.i, true);
   if (v.r === '' || v.k === '' || isNaN(parseFloat(v.r.replace(',', '.'))) || isNaN(parseFloat(v.k.replace(',', '.')))) { msg('Cargá reps y kilos antes de marcar la serie.', false); return; }
   v.d = true; S[k] = v;
+  if (DR[sw]) { delete DR[sw][k]; lsSet(DK_, DR); }   // ya no es borrador: pasa a la cola de pendientes
   rest(restSec(D[d].ejercicios[ei].descanso));
-  escribir({ action: 'serie', d: d, e: ei, s: s, reps: v.r, peso: v.k, rir: v.i || '' }, sw)
-    .catch(function(){ v.d = false; if (sw === SEL) render(); msg('No se pudo guardar esa serie. Probá de nuevo.', false); });
+  encolar('s|' + sw + '|' + d + '|' + ei + '|' + s, { action: 'serie', d: d, e: ei, s: s, reps: v.r, peso: v.k, rir: v.i || '' }, sw);
   msg('', true); render();
 }
 
 function saveSleep(v){
   if (RO) return;
-  escribir({ action: 'sueno', d: day, horas: v }, SEL)
-    .catch(function(){ msg('No se pudo guardar el sueño.', false); });
+  encolar('z|' + SEL + '|' + day, { action: 'sueno', d: day, horas: v }, SEL);
 }
 
-// Observaciones por ejercicio: se guardan solas al dejar de escribir (o al salir del cuadro).
-function setSt(k, t, ok){ var p = $('st_' + k); if (!p) return; p.style.color = ok ? 'var(--ok)' : 'var(--bad)'; p.textContent = t || ''; }
+// Observaciones por ejercicio: se guardan en el celular en cada tecla y se envían solas al dejar de escribir (o al salir del cuadro).
 function setobs(ei, v){
   if (RO) return;
   touched = true;
-  var d = day, sw = SEL, k = d + '_' + ei, kt = sw + '|' + k;
-  O[k] = v; setSt(k, '', true);
-  clearTimeout(OT[kt]);
-  OT[kt] = setTimeout(function(){ saveObs(d, ei, v, sw); }, 1200);   // el texto y la semana viajan con el temporizador, así no se pierde ni va a otra semana si se cambia de pestaña
+  var d = day, sw = SEL, k = d + '_' + ei;
+  O[k] = v;
+  encolar('o|' + sw + '|' + k, { action: 'obs', d: d, e: ei, texto: v }, sw, 1200);
 }
-function saveObs(d, ei, texto, sem){
-  sem = sem || SEL;
-  var k = d + '_' + ei, kt = sem + '|' + k;
-  clearTimeout(OT[kt]);
-  var aca = function(t, ok){ if (sem === SEL) setSt(k, t, ok); };   // el aviso solo se muestra si esa semana sigue en pantalla
-  aca('Guardando…', true);
-  escribir({ action: 'obs', d: d, e: ei, texto: texto === undefined ? (O[k] || '') : texto }, sem)
-    .then(function(){ aca('Guardado ✓', true); })
-    .catch(function(){ aca('No se pudo guardar. Probá de nuevo.', false); });
-}
+function saveObs(){ clearTimeout(DT); vaciar(); }   // al salir del cuadro, se envía ya
 
 function exDone(ei){ var x = D[day].ejercicios[ei]; return x.series.length > 0 && x.series.every(function(s, si){ return (S[key(day,ei,si)] || {}).d; }); }
 function counts(){
@@ -387,7 +456,10 @@ function finish(){
   if (RO) return;
   var c = counts();
   if (!c[0]) { msg('Marcá al menos una serie antes de terminar.', false); return; }
-  msg('Listo. Cada serie ya quedó guardada en tu planilla.', true);
+  vaciar();
+  var n = Object.keys(OUT).length;
+  if (n) msg('Todo quedó guardado en tu celular. Se enviará a la planilla apenas haya conexión.', true);
+  else msg('Listo. Cada serie ya quedó guardada en tu planilla.', true);
 }
 
 // Descanso: FALTAN (cuenta regresiva) y DESCANSADO (tiempo real). Se calcula con la hora, no con "ticks", así no se atrasa si el celular pausa la pestaña.
