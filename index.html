@@ -238,6 +238,7 @@ function pasada(ks, i){
     pasada(ks, i + 1);
   }).catch(function(e){
     if (e && e.message === 'Link inválido') { flushing = false; return; }
+    if (e && e.message === 'Semana inválida' && OUT[k] && OUT[k].ts === ts) { delete OUT[k]; lsSet(OK_, OUT); estadoPend(); }   // esa semana ya no existe en la ventana: no tiene sentido reintentar
     pasada(ks, i + 1);
   });
 }
